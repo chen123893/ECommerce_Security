@@ -5,6 +5,7 @@ $pageTitle = "Add User | ShopEase Admin";
 $pageHeading = "Add User";
 
 include '../../../config/database.php';
+include_once '../../../includes/security.php';
 
 $error = "";
 
@@ -17,16 +18,21 @@ if (isset($_POST['submit'])) {
     if (!in_array($role, ['Admin', 'Staff', 'Client'], true)) {
         $error = "Invalid role selected.";
     } else {
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        $sql = "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)";
-        $stmt = mysqli_prepare($conn, $sql);
-        mysqli_stmt_bind_param($stmt, "ssss", $name, $email, $hashedPassword, $role);
-
-        if (mysqli_stmt_execute($stmt)) {
-            header("Location: index.php");
-            exit;
+        $policy = validate_password_strength($password);
+        if (!$policy['valid']) {
+            $error = implode(' ', $policy['errors']);
         } else {
-            $error = "Database Error: " . mysqli_error($conn);
+            $hashedPassword = hash_password($password);
+            $sql = "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)";
+            $stmt = mysqli_prepare($conn, $sql);
+            mysqli_stmt_bind_param($stmt, "ssss", $name, $email, $hashedPassword, $role);
+
+            if (mysqli_stmt_execute($stmt)) {
+                header("Location: index.php");
+                exit;
+            } else {
+                $error = "Database Error: " . mysqli_error($conn);
+            }
         }
     }
 }
@@ -82,6 +88,9 @@ include '../../includes/header.php';
                     <div class="form-group">
                         <label for="password" class="form-label">Password <span>*</span></label>
                         <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+                        <div style="font-size: 0.78rem; color: #64748B; margin-top: 0.35rem;">
+                            Min 8 characters with upper, lower, number, and special symbol.
+                        </div>
                     </div>
 
                     <div class="form-group">

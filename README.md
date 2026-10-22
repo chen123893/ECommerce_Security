@@ -118,15 +118,55 @@ Change all development passwords before using the application outside a local te
 
 ## 🗄️ Database overview
 
-- 👥 `users`: login identities and role assignments
+- 👥 `users`: login identities, role assignments, and 2FA secrets
 - 📇 `clients`: client contact and delivery information
+- 🛡️ `login_attempts`: IP and account login attempt tracking for rate limiting
+- 🔑 `password_resets`: cryptographically secure SHA-256 password reset tokens
 - 🛍️ `products`, `categories`, and `brands`: product catalog
 - 📦 `orders` and `order_items`: purchases and their products
 - 🤝 `team` and `partners`: storefront content managed from the portal
 
-## 🔒 Security notes
+## 🛡️ Security Architecture & Implementations
 
-- 🔐 Use HTTPS in production.
-- 🔑 Store a strong, unique password for every account.
-- 🚫 Do not commit production credentials or uploaded files containing sensitive information.
-- 🛡️ Review permissions before assigning the `Admin` role.
+### 1. Strong Password Policy & Modern Hashing (Argon2id / Bcrypt)
+- **Password Policy Enforced**:
+  - Minimum 8 characters in length.
+  - Requires at least 1 uppercase letter (`A-Z`).
+  - Requires at least 1 lowercase letter (`a-z`).
+  - Requires at least 1 numeric digit (`0-9`).
+  - Requires at least 1 special symbol (`!@#$%^&*` etc.).
+  - Real-time client-side visual feedback checklist and strict server-side validation.
+- **Hashing Algorithm**:
+  - Automatically selects `Argon2id` (`PASSWORD_ARGON2ID`) when supported by PHP, with fallback to high-cost `Bcrypt` (`cost = 12`).
+  - **Transparent Auto-Rehashing**: Upon every successful login, legacy hashes are automatically rehashed in the database without any user friction.
+
+### 2. Login Rate Limiting (Brute-Force & Credential Stuffing Defense)
+- Tracked via dedicated database table `login_attempts` with IP and email indexes.
+- **Per-Account Limit**: 5 consecutive failed attempts per email within a 15-minute sliding window.
+- **Per-IP Limit**: 10 failed attempts across all accounts per IP within 15 minutes (mitigates distributed spraying).
+- Protects both Customer login (`/pages/auth/login.php`) and Admin login (`/admin/login.php`).
+- Automatically clears failed counters upon successful authentication.
+- Rate-limiting protection is also applied to TOTP verification attempts on 2FA screens.
+
+### 3. Secure Password Reset Flow
+- **Anti-Enumeration Design**: Submitting an email returns a uniform, timing-safe confirmation message regardless of whether the email exists.
+- **Cryptographic High-Entropy Tokens**:
+  - Generates 256-bit cryptographically secure random tokens (`random_bytes(32)`).
+  - Only stores **SHA-256 hashes** of tokens in the database, preventing token leakage in case of database dumps.
+- **Single-Use & 30-Minute Expiry**: Tokens expire in 30 minutes and are immediately consumed upon reset.
+- **Local Dev Simulation Banner**: In local testing environments without an active SMTP service, a simulated reset link is made available for instant testing.
+
+### 4. Admin Multi-Factor Authentication (MFA / TOTP)
+- **RFC 6238 Compliant TOTP Engine**: Works with Google Authenticator, Microsoft Authenticator, 1Password, Authy, etc.
+- **Self-Contained Pure PHP Implementation**: Zero third-party backend server dependencies; does not send secrets to external chart APIs.
+- **QR Code & Secret Key Display**: Interactive setup wizard with instant QR code scanning and manual Base32 key entry.
+- **Emergency Single-Use Backup Codes**: Generates 8 one-time alphanumeric recovery codes (stored as SHA-256 hashes) to prevent account lockout if the mobile device is lost.
+- **Admin Management Portal**: Administrative users can enable/disable 2FA and regenerate backup recovery codes from `/admin/pages/security/mfa.php`. Administrators can also reset 2FA for staff or locked users directly from `/admin/pages/users/edit.php`.
+
+## 🔒 Security Best Practices
+
+- 🔐 Always enforce HTTPS in production environments.
+- 🔑 Set strong, unique passwords for all staff and admin accounts.
+- 🛡️ Enable Admin Two-Factor Authentication immediately after initial setup.
+- 🚫 Never commit production database credentials to version control.
+

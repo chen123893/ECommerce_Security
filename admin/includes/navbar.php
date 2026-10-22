@@ -47,6 +47,10 @@
                     <i class="bi bi-person"></i>
                     Profile & Overview
                 </a>
+                <a href="/E-Commerce-Management-System/admin/pages/security/mfa.php" class="dropdown-item">
+                    <i class="bi bi-shield-lock"></i>
+                    Two-Factor Auth
+                </a>
                 <a href="/E-Commerce-Management-System/admin/logout.php" class="dropdown-item logout">
                     <i class="bi bi-box-arrow-right"></i>
                     Logout
