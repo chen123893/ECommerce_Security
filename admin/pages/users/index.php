@@ -6,6 +6,7 @@ $pageHeading = "Users";
 
 include '../../includes/header.php';
 include '../../../config/database.php';
+include_once '../../../includes/security.php';
 
 $query = 'SELECT * FROM users ORDER BY id DESC;';
 $result = mysqli_query($conn, $query);
@@ -53,7 +54,14 @@ if ($result) {
                                 <div class="admin-avatar" style="width: 48px; height: 48px; font-size: 1.25rem;">
                                     <?= strtoupper(substr($user['name'], 0, 1)) ?>
                                 </div>
-                                <span class="badge <?= $roleClass ?>"><?= htmlspecialchars($user['role'] ?? 'User') ?></span>
+                                <div class="d-flex align-items-center gap-1">
+                                    <span class="badge <?= $roleClass ?>"><?= htmlspecialchars($user['role'] ?? 'User') ?></span>
+                                    <?php if (!empty($user['two_factor_enabled'])) { ?>
+                                        <span class="badge" style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; font-size: 0.7rem;" title="Two-Factor Authentication is Active">
+                                            <i class="bi bi-shield-check"></i> 2FA
+                                        </span>
+                                    <?php } ?>
+                                </div>
                             </div>
 
                             <span class="entity-subtitle">USER #<?= $user['id']; ?></span>

@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 include "../../config/database.php";
+include_once "../../includes/security.php";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
@@ -12,56 +13,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $city = trim($_POST['city'] ?? '');
     $password = $_POST['password'] ?? '';
     
-    if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || !$phone || !$address || !$city || strlen($password) < 8) {
-        $_SESSION['auth_error'] = 'Please complete all fields correctly. Password must be at least 8 characters.';
-        header("Location: ../../pages/auth/signup.php");
-        exit;
-    }
-    
-    // Check if email already registered
-    $email = mysqli_real_escape_string($conn, $email);
-    $check_query = "SELECT id FROM users WHERE email = '$email'";
-    $check_result = mysqli_query($conn, $check_query);
-    
-    if ($check_result && mysqli_num_rows($check_result) > 0) {
-        $_SESSION['auth_error'] = 'Email already registered.';
+    // Basic field validation
+    if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || !$phone || !$address || !$city) {
+        $_SESSION['auth_error'] = 'Please complete all required fields with valid details.';
         header("Location: ../../pages/auth/signup.php");
         exit;
     }
 
-    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    // Strong password policy validation
+    $passwordCheck = validate_password_strength($password);
+    if (!$passwordCheck['valid']) {
+        $_SESSION['auth_error'] = implode(' ', $passwordCheck['errors']);
+        header("Location: ../../pages/auth/signup.php");
+        exit;
+    }
+    
+    // Check if email already registered using prepared statement
+    $check_stmt = mysqli_prepare($conn, "SELECT id FROM users WHERE email = ? LIMIT 1");
+    mysqli_stmt_bind_param($check_stmt, "s", $email);
+    mysqli_stmt_execute($check_stmt);
+    $check_result = mysqli_stmt_get_result($check_stmt);
+    $exists = mysqli_num_rows($check_result) > 0;
+    mysqli_stmt_close($check_stmt);
+    
+    if ($exists) {
+        $_SESSION['auth_error'] = 'That email address is already registered. Please sign in or use a different email.';
+        header("Location: ../../pages/auth/signup.php");
+        exit;
+    }
 
-    $name = mysqli_real_escape_string($conn, $name);
-    $hashed_password = mysqli_real_escape_string($conn, $hashed_password);
+    // Modern secure password hashing (Argon2id if supported, otherwise Bcrypt)
+    $hashed_password = hash_password($password);
+
+    // Insert user with prepared statement
+    $user_stmt = mysqli_prepare($conn, "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'Client')");
+    mysqli_stmt_bind_param($user_stmt, "sss", $name, $email, $hashed_password);
     
-    $user_insert = "INSERT INTO users (name, email, password, role) VALUES ('$name', '$email', '$hashed_password', 'Client')";
-    
-    if (mysqli_query($conn, $user_insert)) {
+    if (mysqli_stmt_execute($user_stmt)) {
         $user_id = mysqli_insert_id($conn);
+        mysqli_stmt_close($user_stmt);
         
-        $phone = mysqli_real_escape_string($conn, $phone);
-        $address = mysqli_real_escape_string($conn, $address);
-        $city = mysqli_real_escape_string($conn, $city);
+        // Insert client record
+        $client_stmt = mysqli_prepare($conn, "INSERT INTO clients (user_id, phone, address, city) VALUES (?, ?, ?, ?)");
+        mysqli_stmt_bind_param($client_stmt, "isss", $user_id, $phone, $address, $city);
         
-        $client_insert = "INSERT INTO clients (user_id, phone, address, city) VALUES ($user_id, '$phone', '$address', '$city')";
-        
-        if (mysqli_query($conn, $client_insert)) {
+        if (mysqli_stmt_execute($client_stmt)) {
             $client_id = mysqli_insert_id($conn);
+            mysqli_stmt_close($client_stmt);
             
             session_regenerate_id(true);
             $_SESSION['user_id'] = $user_id;
             $_SESSION['user_name'] = $name;
             $_SESSION['user_email'] = $email;
+            $_SESSION['user_role'] = 'Client';
             $_SESSION['client_id'] = $client_id;
             
             header("Location: ../../pages/home.php");
             exit;
         } else {
-            mysqli_query($conn, "DELETE FROM users WHERE id = $user_id");
-            $_SESSION['auth_error'] = 'Registration failed due to client details error.';
+            mysqli_stmt_close($client_stmt);
+            // Cleanup incomplete user record
+            $del_stmt = mysqli_prepare($conn, "DELETE FROM users WHERE id = ?");
+            mysqli_stmt_bind_param($del_stmt, "i", $user_id);
+            mysqli_stmt_execute($del_stmt);
+            mysqli_stmt_close($del_stmt);
+
+            $_SESSION['auth_error'] = 'Registration failed due to client details error. Please try again.';
         }
     } else {
-        $_SESSION['auth_error'] = 'Registration failed.';
+        mysqli_stmt_close($user_stmt);
+        $_SESSION['auth_error'] = 'Registration failed. Please try again.';
     }
     
     header("Location: ../../pages/auth/signup.php");

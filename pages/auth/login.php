@@ -9,7 +9,8 @@ if (isset($_SESSION['user_id'])) {
 include "../../includes/header.php";
 
 $error = isset($_SESSION['auth_error']) ? $_SESSION['auth_error'] : '';
-unset($_SESSION['auth_error']);
+$success = isset($_SESSION['auth_success']) ? $_SESSION['auth_success'] : '';
+unset($_SESSION['auth_error'], $_SESSION['auth_success']);
 ?>
 
 <main class="auth-page">
@@ -31,6 +32,13 @@ unset($_SESSION['auth_error']);
                 <p>Enter your details to continue to your account.</p>
             </div>
         
+        <?php if ($success): ?>
+            <div class="auth-alert" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; border-radius: 10px;">
+                <i class="bi bi-check-circle-fill" style="color: #10B981;"></i>
+                <span><?php echo htmlspecialchars($success); ?></span>
+            </div>
+        <?php endif; ?>
+
         <?php if ($error): ?>
             <div class="auth-alert">
                 <i class="bi bi-exclamation-circle-fill"></i>
@@ -47,7 +55,7 @@ unset($_SESSION['auth_error']);
             <div class="auth-field auth-password-field">
                 <div class="auth-label-row">
                     <label class="form-label">Password</label>
-                    <a href="#" class="auth-help-link">Forgot password?</a>
+                    <a href="forgot-password.php" class="auth-help-link">Forgot password?</a>
                 </div>
                 <div class="auth-input-wrap"><i class="bi bi-lock"></i><input type="password" name="password" class="form-control" required placeholder="Enter your password" autocomplete="current-password"></div>
             </div>
