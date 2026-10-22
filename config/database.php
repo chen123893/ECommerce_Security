@@ -17,14 +17,17 @@ $host     = $_ENV['DB_HOST'] ?? '127.0.0.1';
 $username = $_ENV['DB_USER'] ?? 'root';
 $password = $_ENV['DB_PASS'] ?? '';
 $dbname   = $_ENV['DB_NAME'] ?? 'ecommerce';
-$port     = (int)($_ENV['DB_PORT'] ?? 3307);
+$port     = (int)($_ENV['DB_PORT'] ?? 3306);
 
-// Attempt connection on primary port (3307), fallback to default port (3306)
-$conn = @new mysqli($host, $username, $password, $dbname, $port);
-if ($conn->connect_error) {
-    $conn = @new mysqli('localhost', $username, $password, $dbname, 3306);
-    if ($conn->connect_error) {
-        error_log("Secure DB Connection Error: " . $conn->connect_error);
+// Attempt primary port, catch exception if unavailable and fallback to secondary port
+try {
+    $conn = new mysqli($host, $username, $password, $dbname, $port);
+} catch (mysqli_sql_exception $e) {
+    $fallbackPort = ($port === 3307) ? 3306 : 3307;
+    try {
+        $conn = new mysqli($host, $username, $password, $dbname, $fallbackPort);
+    } catch (mysqli_sql_exception $e2) {
+        error_log("Secure DB Connection Error: " . $e2->getMessage());
         die('Database connection failed. Please contact the administrator.');
     }
 }
