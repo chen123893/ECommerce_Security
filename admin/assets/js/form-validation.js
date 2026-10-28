@@ -37,7 +37,7 @@
   }
 
   function validateField(field) {
-    if (field.disabled || field.type === "submit" || field.type === "button") {
+    if (field.matches(":disabled") || field.type === "submit" || field.type === "button") {
       return true;
     }
 

@@ -55,10 +55,12 @@ include "../../includes/header.php";
                     <i class="bi bi-arrow-left"></i>
                     <span>Back to Clients</span>
                 </a>
+                <?php if (admin_can_access('pages/clients/edit.php')) { ?>
                 <a href="edit.php?id=<?= $client['id'] ?>" class="btn btn-primary">
                     <i class="bi bi-pencil"></i>
                     <span>Edit Client</span>
                 </a>
+                <?php } ?>
             </div>
         </div>
 

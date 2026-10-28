@@ -28,7 +28,7 @@ if (isset($_POST['submit'])) {
     $description = mysqli_real_escape_string($conn, $_POST['description']);
     $category_id = (int)$_POST['category_id'];
     $brand_id = (int)$_POST['brand_id'];
-    $price = (float)$_POST['price'];
+    $price = is_admin_role() ? (float)($_POST['price'] ?? 0) : (float)$product['price'];
     $stock = (int)$_POST['stock'];
 
     $oldImage = $product['image'];
@@ -157,6 +157,7 @@ include '../../includes/header.php';
                             class="form-control"
                             value="<?= htmlspecialchars($product['price']); ?>"
                             step="0.01"
+                            <?= is_admin_role() ? '' : 'readonly'; ?>
                             min="0"
                             required
                         >

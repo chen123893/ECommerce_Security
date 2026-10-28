@@ -39,8 +39,8 @@ while ($item = mysqli_fetch_assoc($itemsResult)) {
 $error = "";
 
 if (isset($_POST['submit'])) {
-    $client_id = (int)$_POST['client_id'];
-    $status = mysqli_real_escape_string($conn, $_POST['status']);
+    $client_id = (int)($_POST['client_id'] ?? 0);
+    $status = mysqli_real_escape_string($conn, is_string($_POST['status'] ?? null) ? $_POST['status'] : '');
     $product_ids = $_POST['product_id'] ?? [];
     $quantities = $_POST['quantity'] ?? [];
 
@@ -63,6 +63,11 @@ if (isset($_POST['submit'])) {
     $oldOrder = mysqli_fetch_assoc($oldStatusResult);
     $old_status = $oldOrder['status'];
 
+    // Exact values only, so the status rules below cannot be sidestepped.
+    if (!in_array($status, ['pending', 'processing', 'shipped', 'delivered', 'cancelled'], true)) {
+        $error = "Invalid order status.";
+    }
+
     // Enforce business rules
     if ($old_status === 'cancelled' && $status !== 'cancelled') {
         $error = "A cancelled order cannot be changed to another status.";
@@ -73,6 +78,30 @@ if (isset($_POST['submit'])) {
     } else if ($old_status === 'shipped' && $status === 'cancelled') {
         $error = "Shipped orders cannot be cancelled.";
         $status = $old_status;
+    }
+
+    // Staff may change only the status: customer, items, prices and total stay as stored.
+    if (empty($error) && !is_admin_role() && $old_status === 'shipped' && !in_array($status, ['shipped', 'delivered'], true)) {
+        $error = "Staff can only keep a shipped order as shipped or mark it delivered.";
+    }
+
+    if (empty($error) && !is_admin_role()) {
+        $sql = "UPDATE orders SET status = '$status' WHERE id = $id AND status = '$old_status'";
+
+        if (mysqli_query($conn, $sql)) {
+            if ($status === 'cancelled' && $old_status !== 'cancelled' && mysqli_affected_rows($conn) > 0) {
+                foreach ($orderItems as $item) {
+                    $pid = (int)$item['product_id'];
+                    $qty = (int)$item['quantity'];
+                    mysqli_query($conn, "UPDATE products SET stock = stock + $qty WHERE id = $pid");
+                }
+            }
+
+            header("Location: index.php");
+            exit;
+        }
+
+        $error = "Database Error: " . mysqli_error($conn);
     }
 
     if (empty($error)) {
@@ -110,7 +139,6 @@ if (isset($_POST['submit'])) {
                     }
                 }
             }
-
             header("Location: index.php");
             exit;
         } else {
@@ -158,6 +186,7 @@ include '../../includes/header.php';
             <form method="POST">
                 <div class="form-grid">
                     <div class="form-group">
+                        <fieldset class="d-flex flex-column gap-2" <?= is_admin_role() ? '' : 'disabled'; ?>>
                         <label for="client_id" class="form-label">Client Account <span>*</span></label>
                         <select id="client_id" name="client_id" class="form-select" required>
                             <option value="">Select client...</option>
@@ -167,6 +196,7 @@ include '../../includes/header.php';
                                 </option>
                             <?php } ?>
                         </select>
+                        </fieldset>
                     </div>
 
                     <div class="form-group">
@@ -197,6 +227,7 @@ include '../../includes/header.php';
 
                     <!-- Products list -->
                     <div class="form-group full-width">
+                        <fieldset class="d-flex flex-column gap-2" <?= is_admin_role() ? '' : 'disabled'; ?>>
                         <label class="form-label">Order Items <span>*</span></label>
                         <div id="products-container" class="d-flex flex-column gap-3 mb-3">
                             <?php foreach ($orderItems as $item) { ?>
@@ -255,6 +286,7 @@ include '../../includes/header.php';
                         <button type="button" id="add-product" class="btn btn-outline">
                             <i class="bi bi-plus-lg"></i> Add Another Product
                         </button>
+                        </fieldset>
                     </div>
 
                     <div class="form-group full-width">
