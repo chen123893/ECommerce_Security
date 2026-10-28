@@ -29,7 +29,66 @@ function require_admin_role(): void
 
     if (($_SESSION['admin_role'] ?? '') !== 'Admin') {
         security_log_access_denied('administrator_role_required');
-        http_response_code(403);
+        deny_admin_access();
+    }
+}
+
+/**
+ * Pages Staff may open, relative to /admin and in lowercase. Admin has full access.
+ * Any page not listed is refused for non-Admin roles (deny by default).
+ */
+function staff_allowed_pages(): array
+{
+    return [
+        'index.php',
+        'pages/products/index.php',
+        'pages/products/show.php',
+        'pages/products/create.php',
+        'pages/products/edit.php',
+        'pages/orders/index.php',
+        'pages/orders/order_items.php',
+        'pages/orders/edit.php',
+        'pages/clients/index.php',
+        'pages/clients/show.php',
+        'pages/security/mfa.php',
+    ];
+}
+
+function is_admin_role(): bool
+{
+    return ($_SESSION['admin_role'] ?? '') === 'Admin';
+}
+
+function admin_can_access(string $page): bool
+{
+    return is_admin_role() || in_array(strtolower($page), staff_allowed_pages(), true);
+}
+
+/** Path of the running script relative to /admin, or '' if it cannot be resolved. */
+function current_admin_page(): string
+{
+    $script = str_replace('\\', '/', (string) realpath($_SERVER['SCRIPT_FILENAME'] ?? ''));
+    $base = str_replace('\\', '/', (string) realpath(dirname(__DIR__))) . '/';
+
+    if ($script === '' || stripos($script, $base) !== 0) {
+        return '';
+    }
+
+    return strtolower(substr($script, strlen($base)));
+}
+
+function enforce_admin_page_access(): void
+{
+    if (!admin_can_access(current_admin_page())) {
+        security_log_access_denied('administrator_role_required');
+        deny_admin_access();
+    }
+}
+
+/** Sends HTTP 403 with the access-restricted page and stops the request. */
+function deny_admin_access(): void
+{
+    http_response_code(403);
         ?>
         <!DOCTYPE html>
         <html lang="en">
@@ -204,9 +263,9 @@ function require_admin_role(): void
         </html>
         <?php
         exit;
-    }
 }
 
 require_admin();
+enforce_admin_page_access();
 
 ?>

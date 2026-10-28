@@ -1,5 +1,6 @@
 <?php
 include '../../includes/auth.php';
+require_once '../../../includes/csrf.php';
 require_once __DIR__ . '/../../includes/product-validation.php';
 $pageTitle = "Edit Product | ShopEase Admin";
 $pageHeading = "Edit Product";
@@ -26,7 +27,21 @@ $brandsResult = mysqli_query($conn, $brandsQuery);
 
 $error = "";
 $isSubmitted = isset($_POST['submit']);
-$price = $_POST['price'] ?? null;
+
+if ($isSubmitted) {
+    if (!csrf_token_is_valid('edit_product', $_POST['csrf_token'] ?? null)) {
+        security_log_event('csrf_rejected', 'denied', ['context' => ['form' => 'edit_product']]);
+        http_response_code(403);
+        exit("Invalid or missing CSRF token.");
+    }
+
+    $submittedPrice = $_POST['price'] ?? (string)$product['price'];
+    if (!is_admin_role() && (!is_string($submittedPrice) || !is_numeric($submittedPrice) || (float)$submittedPrice !== (float)$product['price'])) {
+        security_log_access_denied('staff_field_tamper', ['field' => 'price']);
+    }
+}
+
+$price = is_admin_role() ? ($_POST['price'] ?? null) : (string) $product['price'];
 $stock = $_POST['stock'] ?? null;
 $name = $_POST['name'] ?? '';
 $description = $_POST['description'] ?? '';
@@ -140,6 +155,7 @@ include '../../includes/header.php';
             </div>
 
             <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('edit_product')); ?>">
                 <div class="form-grid">
                     <div class="form-group full-width">
                         <label for="name" class="form-label">Product Name <span>*</span></label>
@@ -186,6 +202,7 @@ include '../../includes/header.php';
                             class="form-control"
                             value="<?= htmlspecialchars($product['price']); ?>"
                             step="0.01"
+                            <?= is_admin_role() ? '' : 'readonly'; ?>
                             min="0"
                             required
                         >
