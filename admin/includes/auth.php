@@ -5,6 +5,47 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 
+/** Role currently stored for this user, or '' if the account no longer exists. */
+function fetch_current_role(int $userId): string
+{
+    // Read configuration without including database.php twice in one request.
+    $env = [];
+    $envPath = __DIR__ . '/../../.env';
+    if (is_readable($envPath)) {
+        foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            $line = trim($line);
+            if ($line === '' || $line[0] === '#' || strpos($line, '=') === false) {
+                continue;
+            }
+            [$name, $value] = explode('=', $line, 2);
+            $env[trim($name)] = trim($value);
+        }
+    }
+    $port = (int)($env['DB_PORT'] ?? 3306);
+
+    foreach ([$port, $port === 3307 ? 3306 : 3307] as $candidate) {
+        try {
+            $db = new mysqli($env['DB_HOST'] ?? '127.0.0.1', $env['DB_USER'] ?? 'root', $env['DB_PASS'] ?? '', $env['DB_NAME'] ?? 'ecommerce', $candidate);
+            if ($db->connect_errno) {
+                continue;
+            }
+            $stmt = $db->prepare('SELECT role FROM users WHERE id = ? LIMIT 1');
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            $stmt->bind_result($role);
+            $found = $stmt->fetch();
+            $stmt->close();
+            $db->close();
+
+            return $found ? (string) $role : '';
+        } catch (Throwable $exception) {
+            continue;
+        }
+    }
+
+    return '';
+}
+
 function require_admin(): void
 {
     if (!isset($_SESSION['admin_id'])) {
@@ -12,7 +53,10 @@ function require_admin(): void
         exit;
     }
 
-    if (!in_array($_SESSION['admin_role'] ?? '', ['Admin', 'Staff'], true)) {
+    // Use the role stored now, not the copy cached in the session at login.
+    $_SESSION['admin_role'] = fetch_current_role((int) $_SESSION['admin_id']);
+
+    if (!in_array($_SESSION['admin_role'], ['Admin', 'Staff'], true)) {
         $_SESSION = [];
         session_destroy();
         header("Location: /E-Commerce-Management-System/admin/login.php");
