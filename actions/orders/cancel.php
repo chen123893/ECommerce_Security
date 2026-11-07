@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include "../../config/database.php";
 require_once "../../includes/security_audit.php";
+require_once "../../includes/csrf.php";
 
 if (!isset($_SESSION['client_id'])) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -14,6 +15,12 @@ if (!isset($_SESSION['client_id'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrf_token_is_valid('cancel_order', $_POST['csrf_token'] ?? null)) {
+        security_log_event('csrf_rejected', 'denied', ['context' => ['form' => 'cancel_order']]);
+        http_response_code(403);
+        exit("Invalid or missing CSRF token.");
+    }
+
     $client_id = (int)$_SESSION['client_id'];
     $order_id = isset($_POST['order_id']) ? (int)$_POST['order_id'] : 0;
     
@@ -44,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Update order status
-        $update_query = "UPDATE orders SET status = 'cancelled' WHERE id = $order_id AND status = 'pending'";
+        $update_query = "UPDATE orders SET status = 'cancelled' WHERE id = $order_id AND client_id = $client_id AND status = 'pending'";
         if (mysqli_query($conn, $update_query) && mysqli_affected_rows($conn) > 0) {
             
             // Restore stock
@@ -66,7 +73,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['order_error'] = "Failed to cancel order. It may have already been processed.";
         }
     } else {
-        $_SESSION['order_error'] = "Order not found or access denied.";
+        // Same response whether the order is missing or belongs to someone else.
+        security_log_access_denied('order_not_owned');
+        http_response_code(403);
+        exit('Order not found or access denied.');
     }
 }
 
