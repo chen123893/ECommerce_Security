@@ -38,7 +38,8 @@ $subtotal = 0;
                         ?>
                             <div class="cart-item" style="display: flex; align-items: center; gap: 1.5rem; padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #E5E7EB;">
                                 <div class="cart-item-image" style="width: 110px; height: 110px; border-radius: 12px; overflow: hidden; background: #F8FAFC; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 0.75rem; border: 1px solid #F1F5F9;">
-                                    <img src="../../admin/assets/images/products/<?php echo htmlspecialchars($product['image'] ?? 'default.jpg'); ?>" onerror="this.src='../../admin/assets/images/products/<?php echo htmlspecialchars($product['image'] ?? 'iphone15.jpg'); ?>'" alt="<?php echo htmlspecialchars($product['name']); ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                    <img src="../../admin/assets/images/products/<?php echo rawurlencode($product['image'] ?? 'default.jpg'); ?>"
+                                        onerror="this.onerror=null;this.src='../../admin/assets/images/products/iphone15.jpg'" alt="<?php echo htmlspecialchars($product['name']); ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                                 </div>
                                 <div class="cart-item-details" style="flex: 1;">
                                     <h4 style="margin: 0 0 0.5rem 0; font-size: 1.15rem; color: var(--dark); font-weight: 600;"><?php echo htmlspecialchars($product['name']); ?></h4>

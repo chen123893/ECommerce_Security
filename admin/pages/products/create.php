@@ -1,5 +1,6 @@
 <?php
 include '../../includes/auth.php';
+require_once __DIR__ . '/../../includes/product-validation.php';
 $pageTitle = "Add Product | ShopEase Admin";
 $pageHeading = "Add Product";
 
@@ -12,40 +13,63 @@ $brandsQuery = "SELECT * FROM brands ORDER BY name ASC";
 $brandsResult = mysqli_query($conn, $brandsQuery);
 
 $error = "";
+$isSubmitted = isset($_POST['submit']);
+$price = $_POST['price'] ?? null;
+$stock = $_POST['stock'] ?? null;
+$name = $_POST['name'] ?? '';
+$description = $_POST['description'] ?? '';
+$imageUpload = $_FILES['image'] ?? [];
 
-if (isset($_POST['submit'])) {
-    $name = mysqli_real_escape_string($conn, $_POST['name']);
-    $description = mysqli_real_escape_string($conn, $_POST['description']);
+if ($isSubmitted) {
+    $error = validateProductPriceAndStock($price, $stock);
+    if ($error === '' && (!is_string($name) || !is_string($description))) {
+        $error = 'Enter the product name and description as text.';
+    }
+    if ($error === '') {
+        [$error, $imageExtension] = validateProductImageUpload($imageUpload, true);
+    }
+    if ($error !== '') {
+        http_response_code(422);
+    }
+}
+
+if ($isSubmitted && $error === '') {
     $category_id = (int)$_POST['category_id'];
     $brand_id = (int)$_POST['brand_id'];
-    $price = (float)$_POST['price'];
-    $stock = (int)$_POST['stock'];
-
-    $imageName = $_FILES['image']['name'] ?? '';
-    $imageTmpName = $_FILES['image']['tmp_name'] ?? '';
-
     $uploadDirectory = '../../assets/images/products/';
     if (!is_dir($uploadDirectory)) {
-        mkdir($uploadDirectory, 0777, true);
+        @mkdir($uploadDirectory, 0755, true);
     }
 
-    $imageExtension = pathinfo($imageName, PATHINFO_EXTENSION);
-    $newImageName = uniqid() . '.' . $imageExtension;
+    $newImageName = bin2hex(random_bytes(16)) . '.' . $imageExtension;
 
-    if (move_uploaded_file($imageTmpName, $uploadDirectory . $newImageName)) {
+    if (@move_uploaded_file($imageUpload['tmp_name'], $uploadDirectory . $newImageName)) {
         $sql = "INSERT INTO products (category_id, brand_id, name, description, price, stock, image)
-                VALUES ('$category_id', '$brand_id', '$name', '$description', '$price', '$stock', '$newImageName')";
+                VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        if (mysqli_query($conn, $sql)) {
-            header("Location: index.php");
-            exit;
-        } else {
-            if (file_exists($uploadDirectory . $newImageName)) {
-                unlink($uploadDirectory . $newImageName);
+        try {
+            $stmt = mysqli_prepare($conn, $sql);
+            if ($stmt
+                && mysqli_stmt_bind_param($stmt, 'iisssis', $category_id, $brand_id, $name, $description, $price, $stock, $newImageName)
+                && mysqli_stmt_execute($stmt)) {
+                mysqli_stmt_close($stmt);
+                header("Location: index.php");
+                exit;
             }
-            $error = "Database Error: " . mysqli_error($conn);
+            $errorCode = $stmt ? mysqli_stmt_errno($stmt) : mysqli_errno($conn);
+        } catch (mysqli_sql_exception $exception) {
+            $errorCode = $exception->getCode();
         }
+
+        error_log("ShopEase product create failed (MySQL error $errorCode).");
+        if (!@unlink($uploadDirectory . $newImageName)) {
+            error_log("ShopEase could not remove the upload after a failed product create.");
+        }
+        http_response_code($errorCode === 1452 ? 422 : 500);
+        $error = "Unable to save the product. Please check the details and try again.";
     } else {
+        error_log("ShopEase could not store the image for a new product.");
+        http_response_code(500);
         $error = "Error uploading product image.";
     }
 }

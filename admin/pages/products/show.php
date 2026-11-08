@@ -6,17 +6,19 @@ $pageHeading = "Product Details";
 include '../../../config/database.php';
 
 $id = (int)($_GET['id'] ?? 0);
-$query = "SELECT 
+$query = mysqli_prepare($conn, "SELECT
             products.*,
             categories.name AS category_name,
             brands.name AS brand_name
           FROM products
           LEFT JOIN categories ON products.category_id = categories.id
           LEFT JOIN brands ON products.brand_id = brands.id
-          WHERE products.id = $id";
+          WHERE products.id = ?");
 
-$result = mysqli_query($conn, $query);
-$product = mysqli_fetch_assoc($result);
+mysqli_stmt_bind_param($query, 'i', $id);
+mysqli_stmt_execute($query);
+$product = mysqli_fetch_assoc(mysqli_stmt_get_result($query));
+mysqli_stmt_close($query);
 
 if (!$product) {
     header("Location: index.php");

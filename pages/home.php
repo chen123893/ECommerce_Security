@@ -129,7 +129,8 @@ include "../includes/navbar.php";
                             <?php elseif ((int)$product['total_sold'] > 0): ?>
                                 <div style="position: absolute; top: 10px; left: 10px; background: linear-gradient(135deg, #F59E0B, #D97706); color: white; z-index: 10; padding: 0.35rem 0.75rem; border-radius: 99px; font-weight: 700; font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);"><i class="bi bi-fire"></i> Top Seller</div>
                             <?php endif; ?>
-                            <img src="../admin/assets/images/products/<?php echo htmlspecialchars($product['image'] ?? 'default.jpg'); ?>" onerror="this.src='../admin/assets/images/products/<?php echo htmlspecialchars($product['image'] ?? 'iphone15.jpg'); ?>'" alt="<?php echo htmlspecialchars($product['name']); ?>" style="<?php echo ((int)$product['stock'] <= 0) ? 'opacity: 0.5; filter: grayscale(100%);' : ''; ?>">
+                            <img src="../admin/assets/images/products/<?php echo rawurlencode($product['image'] ?? 'default.jpg'); ?>"
+                                onerror="this.onerror=null;this.src='../admin/assets/images/products/iphone15.jpg'" alt="<?php echo htmlspecialchars($product['name']); ?>" style="<?php echo ((int)$product['stock'] <= 0) ? 'opacity: 0.5; filter: grayscale(100%);' : ''; ?>">
                         </div>
                         <div class="product-info">
                             <?php if(!empty($product['brand_name'])): ?>
@@ -182,7 +183,8 @@ include "../includes/navbar.php";
                 <div class="col-md-3">
                     <div class="brand-card card">
                         <div class="brand-image">
-                            <img src="../admin/assets/images/brands/<?php echo htmlspecialchars($brand['logo'] ?? 'default.png'); ?>" onerror="this.src='../admin/assets/images/brands/<?php echo htmlspecialchars($brand['logo'] ?? 'apple.png'); ?>'" alt="<?php echo htmlspecialchars($brand['name']); ?>">
+                            <img src="../admin/assets/images/brands/<?php echo rawurlencode($brand['logo'] ?? 'default.png'); ?>"
+                                onerror="this.hidden=true" alt="<?php echo htmlspecialchars($brand['name']); ?>">
                         </div>
                         <h4 style="margin-top: 1rem; margin-bottom: 0; font-size: 1.1rem;"><?php echo htmlspecialchars($brand['name']); ?></h4>
                     </div>

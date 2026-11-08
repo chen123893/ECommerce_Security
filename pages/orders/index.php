@@ -99,7 +99,8 @@ unset($_SESSION['order_error'], $_SESSION['order_success']);
                         ?>
                             <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #F3F4F6;">
                                 <div style="width: 60px; height: 60px; background: var(--background); border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0.25rem;">
-                                    <img src="../../admin/assets/images/products/<?php echo htmlspecialchars($item['image'] ?? 'default.jpg'); ?>" onerror="this.src='../../admin/assets/images/products/<?php echo htmlspecialchars($item['image'] ?? 'iphone15.jpg'); ?>'" alt="<?php echo htmlspecialchars($item['name']); ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                    <img src="../../admin/assets/images/products/<?php echo rawurlencode($item['image'] ?? 'default.jpg'); ?>"
+                                        onerror="this.onerror=null;this.src='../../admin/assets/images/products/iphone15.jpg'" alt="<?php echo htmlspecialchars($item['name']); ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                                 </div>
                                 <div style="flex: 1;">
                                     <div style="font-weight: 600; color: var(--dark);"><?php echo htmlspecialchars($item['name']); ?></div>
