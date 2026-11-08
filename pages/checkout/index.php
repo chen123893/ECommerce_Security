@@ -2,6 +2,7 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+require_once "../../includes/csrf.php";
 include "../../config/database.php";
 
 if (!isset($_SESSION['client_id'])) {
@@ -12,6 +13,7 @@ if (empty($_SESSION['cart'])) {
     header("Location: ../cart/index.php");
     exit;
 }
+$checkoutToken = csrf_token('place_order');
 
 include "../../includes/header.php";
 include "../../includes/navbar.php";
@@ -152,6 +154,7 @@ $user = $user_result ? mysqli_fetch_assoc($user_result) : null;
                     </div>
                     
                     <form action="../../actions/checkout/place-order.php" method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($checkoutToken); ?>">
                         <button type="submit" class="btn btn-primary checkout-submit"><i class="bi bi-lock-fill"></i> Place order securely</button>
                     </form>
                     
