@@ -1,8 +1,20 @@
 <?php
 include '../../includes/auth.php';
 require_admin_role();
+require_once '../../../includes/csrf.php';
 
-$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, [
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Allow: POST');
+    http_response_code(405);
+    exit("Method not allowed.");
+}
+
+if (!csrf_token_is_valid('delete_product', $_POST['csrf_token'] ?? null)) {
+    http_response_code(403);
+    exit("Invalid or missing CSRF token.");
+}
+
+$id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT, [
     'options' => ['min_range' => 1, 'max_range' => 4294967295],
 ]);
 if (!$id) {
