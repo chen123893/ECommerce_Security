@@ -115,7 +115,8 @@ $user = $user_result ? mysqli_fetch_assoc($user_result) : null;
                             <div class="checkout-item">
                                 <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
                                     <div class="checkout-item-image">
-                                        <img src="../../admin/assets/images/products/<?php echo htmlspecialchars($product['image'] ?? 'default.jpg'); ?>" onerror="this.src='../../admin/assets/images/products/<?php echo htmlspecialchars($product['image'] ?? 'iphone15.jpg'); ?>'" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                        <img src="../../admin/assets/images/products/<?php echo rawurlencode($product['image'] ?? 'default.jpg'); ?>"
+                                            onerror="this.onerror=null;this.src='../../admin/assets/images/products/iphone15.jpg'" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                                     </div>
                                     <div class="checkout-item-info">
                                         <div style="font-weight: 600; color: var(--dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;"><?php echo htmlspecialchars($product['name']); ?></div>

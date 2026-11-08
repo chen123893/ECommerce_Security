@@ -1,14 +1,17 @@
 <?php
 include '../../includes/auth.php';
+require_once __DIR__ . '/../../includes/product-validation.php';
 $pageTitle = "Edit Product | ShopEase Admin";
 $pageHeading = "Edit Product";
 
 include '../../../config/database.php';
 
 $id = (int)($_GET['id'] ?? 0);
-$query = "SELECT * FROM products WHERE id = $id";
-$result = mysqli_query($conn, $query);
-$product = mysqli_fetch_assoc($result);
+$query = mysqli_prepare($conn, "SELECT * FROM products WHERE id = ?");
+mysqli_stmt_bind_param($query, 'i', $id);
+mysqli_stmt_execute($query);
+$product = mysqli_fetch_assoc(mysqli_stmt_get_result($query));
+mysqli_stmt_close($query);
 
 if (!$product) {
     header("Location: index.php");
@@ -22,55 +25,80 @@ $brandsQuery = "SELECT * FROM brands ORDER BY name ASC";
 $brandsResult = mysqli_query($conn, $brandsQuery);
 
 $error = "";
+$isSubmitted = isset($_POST['submit']);
+$price = $_POST['price'] ?? null;
+$stock = $_POST['stock'] ?? null;
+$name = $_POST['name'] ?? '';
+$description = $_POST['description'] ?? '';
+$imageUpload = $_FILES['image'] ?? [];
 
-if (isset($_POST['submit'])) {
-    $name = mysqli_real_escape_string($conn, $_POST['name']);
-    $description = mysqli_real_escape_string($conn, $_POST['description']);
+if ($isSubmitted) {
+    $error = validateProductPriceAndStock($price, $stock);
+    if ($error === '' && (!is_string($name) || !is_string($description))) {
+        $error = 'Enter the product name and description as text.';
+    }
+    if ($error === '') {
+        [$error, $imageExtension] = validateProductImageUpload($imageUpload, false);
+    }
+    if ($error !== '') {
+        http_response_code(422);
+    }
+}
+
+if ($isSubmitted && $error === '') {
     $category_id = (int)$_POST['category_id'];
     $brand_id = (int)$_POST['brand_id'];
-    $price = (float)$_POST['price'];
-    $stock = (int)$_POST['stock'];
-
     $oldImage = $product['image'];
+    $image = $oldImage;
+    $uploadDirectory = '../../assets/images/products/';
 
-    if (!empty($_FILES['image']['name'])) {
-        $imageName = $_FILES['image']['name'];
-        $imageTmpName = $_FILES['image']['tmp_name'];
-        $uploadDirectory = '../../assets/images/products/';
+    if ($imageExtension !== null) {
+        $newImageName = bin2hex(random_bytes(16)) . '.' . $imageExtension;
 
-        $imageExtension = pathinfo($imageName, PATHINFO_EXTENSION);
-        $newImageName = uniqid() . '.' . $imageExtension;
-
-        if (move_uploaded_file($imageTmpName, $uploadDirectory . $newImageName)) {
+        if (@move_uploaded_file($imageUpload['tmp_name'], $uploadDirectory . $newImageName)) {
             $image = $newImageName;
-            if (!empty($oldImage) && file_exists($uploadDirectory . $oldImage)) {
-                unlink($uploadDirectory . $oldImage);
-            }
         } else {
+            error_log("ShopEase could not store the replacement image for product $id.");
+            http_response_code(500);
             $error = "Error uploading image.";
-            $image = $oldImage;
         }
-    } else {
-        $image = $oldImage;
     }
 
     if (empty($error)) {
         $sql = "UPDATE products SET
-                    category_id = '$category_id',
-                    brand_id = '$brand_id',
-                    name = '$name',
-                    description = '$description',
-                    price = '$price',
-                    stock = '$stock',
-                    image = '$image'
-                WHERE id = $id";
+                    category_id = ?,
+                    brand_id = ?,
+                    name = ?,
+                    description = ?,
+                    price = ?,
+                    stock = ?,
+                    image = ?
+                WHERE id = ?";
 
-        if (mysqli_query($conn, $sql)) {
-            header("Location: index.php");
-            exit;
-        } else {
-            $error = "Database Error: " . mysqli_error($conn);
+        try {
+            $stmt = mysqli_prepare($conn, $sql);
+            if ($stmt
+                && mysqli_stmt_bind_param($stmt, 'iisssisi', $category_id, $brand_id, $name, $description, $price, $stock, $image, $id)
+                && mysqli_stmt_execute($stmt)) {
+                mysqli_stmt_close($stmt);
+                $oldImagePath = $uploadDirectory . $oldImage;
+                if ($image !== $oldImage && !empty($oldImage) && is_file($oldImagePath) && !@unlink($oldImagePath)) {
+                    error_log("ShopEase could not remove the replaced image for product $id.");
+                }
+                header("Location: index.php");
+                exit;
+            }
+            $errorCode = $stmt ? mysqli_stmt_errno($stmt) : mysqli_errno($conn);
+        } catch (mysqli_sql_exception $exception) {
+            $errorCode = $exception->getCode();
         }
+
+        error_log("ShopEase product update failed (MySQL error $errorCode) for product $id.");
+        if ($image !== $oldImage && !@unlink($uploadDirectory . $image)) {
+            error_log("ShopEase could not remove the upload after a failed update for product $id.");
+        }
+        http_response_code($errorCode === 1452 ? 422 : 500);
+        $error = "Unable to save the product. Please check the details and try again.";
     }
 }
 
