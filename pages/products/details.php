@@ -27,7 +27,8 @@ if (!$product) {
                     <?php if ((int)$product['stock'] <= 0): ?>
                         <span class="badge" style="position: absolute; top: 20px; right: 20px; background: #DC2626; color: white; z-index: 10; padding: 0.5rem 1rem; border-radius: 99px; font-weight: 600; font-size: 0.9rem; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Out of Stock</span>
                     <?php endif; ?>
-                    <img src="../../admin/assets/images/products/<?php echo htmlspecialchars($product['image'] ?? 'default.jpg'); ?>" onerror="this.src='../../admin/assets/images/products/<?php echo htmlspecialchars($product['image'] ?? 'iphone15.jpg'); ?>'" alt="<?php echo htmlspecialchars($product['name']); ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    <img src="../../admin/assets/images/products/<?php echo rawurlencode($product['image'] ?? 'default.jpg'); ?>"
+                        onerror="this.onerror=null;this.src='../../admin/assets/images/products/iphone15.jpg'" alt="<?php echo htmlspecialchars($product['name']); ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                 </div>
             </div>
             <div class="col-md-6" style="padding-left: 3rem;">
