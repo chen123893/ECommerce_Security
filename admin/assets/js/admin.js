@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // 4. Modal Delete Confirmation
-    let targetDeleteUrl = null;
+    let confirmDeleteAction = null;
     const modalHtml = `
         <div class="modal-backdrop" id="deleteModal">
             <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -102,15 +102,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 
-    function openDeleteModal(url) {
-        targetDeleteUrl = url;
+    function openDeleteModal(action) {
+        confirmDeleteAction = action;
         if (deleteModal) {
             deleteModal.classList.add('show');
         }
     }
 
     function closeDeleteModal() {
-        targetDeleteUrl = null;
+        confirmDeleteAction = null;
         if (deleteModal) {
             deleteModal.classList.remove('show');
         }
@@ -130,20 +130,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener('click', function () {
-            if (targetDeleteUrl) {
-                window.location.href = targetDeleteUrl;
-            }
+            const action = confirmDeleteAction;
+            closeDeleteModal();
+            if (action) action();
         });
     }
 
-    // Intercept delete action clicks
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (form.matches('form[data-confirm-delete]')) {
+            e.preventDefault();
+            openDeleteModal(() => form.submit());
+        }
+    });
+
+    // Keep the confirmation dialog for existing delete links.
     document.addEventListener('click', function (e) {
-        const deleteBtn = e.target.closest('.action-delete, [href*="delete.php"]');
+        const deleteBtn = e.target.closest('a.action-delete, a[href*="delete.php"]');
         if (deleteBtn && !deleteBtn.hasAttribute('data-no-modal')) {
             e.preventDefault();
             const href = deleteBtn.getAttribute('href');
             if (href && href !== '#') {
-                openDeleteModal(href);
+                openDeleteModal(() => { window.location.href = href; });
             }
         }
     });
