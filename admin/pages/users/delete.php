@@ -11,6 +11,10 @@ try {
 
     mysqli_query($conn, $sql);
 
+    if (mysqli_affected_rows($conn) > 0) {
+        security_log_event('admin_user_deleted', 'success', ['target_type' => 'user', 'target_id' => (int)$id]);
+    }
+
     header("Location: index.php");
     exit;
 
