@@ -52,6 +52,7 @@ if ($isSubmitted && $error === '') {
             if ($stmt
                 && mysqli_stmt_bind_param($stmt, 'iisssis', $category_id, $brand_id, $name, $description, $price, $stock, $newImageName)
                 && mysqli_stmt_execute($stmt)) {
+                security_log_event('admin_product_created', 'success', ['target_type' => 'product', 'target_id' => mysqli_insert_id($conn)]);
                 mysqli_stmt_close($stmt);
                 header("Location: index.php");
                 exit;

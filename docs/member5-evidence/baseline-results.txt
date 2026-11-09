@@ -1,0 +1,25 @@
+B-01 audit tables:
+ (none)
+B-02 alert tables:
+ (none)
+B-03 3 failed logins, last status 302 ../../pages/auth/login.php
++-------------+
+| failed_rows |
++-------------+
+|           3 |
++-------------+
+B-04 correct login status 302 ../../pages/home.php
++---------------------------+
+| failed_rows_after_success |
++---------------------------+
+|                         0 |
++---------------------------+
+B-05 customer opens admin users page: 302 /E-Commerce-Management-System/admin/login.php
++----------------+------------+
+| TABLE_NAME     | TABLE_ROWS |
++----------------+------------+
+| login_attempts |          1 |
++----------------+------------+
+B-06 admin/pages/security/dashboard.php 404
+B-06 pages/privacy/index.php 404
+B-06 pages/security/index.php 404

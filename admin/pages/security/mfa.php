@@ -42,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_bind_param($enableStmt, "ssi", $secret, $backupCodes['hashed_records'], $userId);
             if (mysqli_stmt_execute($enableStmt)) {
                 mysqli_stmt_close($enableStmt);
+                security_log_event('mfa_enabled', 'success', ['target_type' => 'user', 'target_id' => $userId]);
                 $success = "Two-Factor Authentication has been successfully enabled for your administrative account!";
                 $user['two_factor_enabled'] = 1;
                 $user['two_factor_secret'] = $secret;
@@ -67,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_bind_param($disableStmt, "i", $userId);
             if (mysqli_stmt_execute($disableStmt)) {
                 mysqli_stmt_close($disableStmt);
+                security_log_event('mfa_disabled', 'success', ['target_type' => 'user', 'target_id' => $userId]);
                 $success = "Two-Factor Authentication has been successfully disabled.";
                 $user['two_factor_enabled'] = 0;
                 $user['two_factor_secret'] = null;
@@ -86,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_bind_param($regenStmt, "si", $newBackupCodes['hashed_records'], $userId);
             if (mysqli_stmt_execute($regenStmt)) {
                 mysqli_stmt_close($regenStmt);
+                security_log_event('mfa_backup_codes_regenerated', 'success', ['target_type' => 'user', 'target_id' => $userId]);
                 $success = "New emergency backup recovery codes have been generated. Previous backup codes are now invalidated.";
                 $user['two_factor_backup_codes'] = $newBackupCodes['hashed_records'];
                 $showBackupCodes = true;

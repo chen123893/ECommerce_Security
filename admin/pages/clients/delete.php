@@ -24,6 +24,10 @@ mysqli_stmt_bind_param(
 
 mysqli_stmt_execute($delete);
 
+if (mysqli_stmt_affected_rows($delete) > 0) {
+    security_log_event('admin_client_deleted', 'success', ['target_type' => 'client', 'target_id' => $id]);
+}
+
 header("Location: index.php");
 exit;
 

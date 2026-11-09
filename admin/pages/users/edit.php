@@ -54,6 +54,7 @@ if (isset($_POST['submit'])) {
             }
 
             if (mysqli_stmt_execute($stmt)) {
+                security_log_event('admin_user_updated', 'success', ['target_type' => 'user', 'target_id' => $id, 'context' => ['assigned_role' => $role, 'credential_reset' => $hashedPassword !== null, 'mfa_reset' => (bool)$reset2FA]]);
                 if ($reset2FA) {
                     $stmt2fa = mysqli_prepare($conn, "UPDATE users SET two_factor_enabled = 0, two_factor_secret = NULL, two_factor_backup_codes = NULL WHERE id = ?");
                     mysqli_stmt_bind_param($stmt2fa, "i", $id);

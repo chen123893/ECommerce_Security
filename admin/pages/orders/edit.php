@@ -111,6 +111,7 @@ if (isset($_POST['submit'])) {
                 }
             }
 
+            security_log_event('admin_order_updated', 'success', ['target_type' => 'order', 'target_id' => $id, 'context' => ['status' => $status]]);
             header("Location: index.php");
             exit;
         } else {

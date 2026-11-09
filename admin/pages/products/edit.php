@@ -80,6 +80,7 @@ if ($isSubmitted && $error === '') {
             if ($stmt
                 && mysqli_stmt_bind_param($stmt, 'iisssisi', $category_id, $brand_id, $name, $description, $price, $stock, $image, $id)
                 && mysqli_stmt_execute($stmt)) {
+                security_log_event('admin_product_updated', 'success', ['target_type' => 'product', 'target_id' => $id]);
                 mysqli_stmt_close($stmt);
                 $oldImagePath = $uploadDirectory . $oldImage;
                 if ($image !== $oldImage && !empty($oldImage) && is_file($oldImagePath) && !@unlink($oldImagePath)) {

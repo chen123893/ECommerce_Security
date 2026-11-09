@@ -4,8 +4,12 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include "../../config/database.php";
 include_once "../../includes/security.php";
+require_once "../../includes/security_audit.php";
 
 if (!isset($_SESSION['user_id'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        security_log_access_denied('not_signed_in');
+    }
     header("Location: ../../pages/auth/login.php");
     exit;
 }
@@ -45,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     mysqli_stmt_close($stmt);
 
     if (!$user || !password_verify($currentPassword, $user['password'])) {
+        security_log_event('password_change_failed', 'failure', ['context' => ['reason' => 'current_credential_incorrect']]);
         $_SESSION['profile_error'] = 'Your current password was entered incorrectly.';
         header("Location: ../../pages/profile/index.php");
         exit;
@@ -58,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (mysqli_stmt_execute($updateStmt)) {
         mysqli_stmt_close($updateStmt);
+        security_log_event('password_changed', 'success');
         $_SESSION['profile_msg'] = 'Your password has been changed successfully with enhanced security hashing.';
     } else {
         mysqli_stmt_close($updateStmt);

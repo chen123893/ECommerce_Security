@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 if (!csrf_token_is_valid('delete_product', $_POST['csrf_token'] ?? null)) {
+    security_log_event('csrf_rejected', 'denied', ['context' => ['form' => 'delete_product']]);
     http_response_code(403);
     exit("Invalid or missing CSRF token.");
 }
@@ -51,6 +52,8 @@ if ($deleted !== 1) {
     http_response_code(404);
     exit("Product not found.");
 }
+
+security_log_event('admin_product_deleted', 'success', ['target_type' => 'product', 'target_id' => $id]);
 
 if (!empty($product['image'])) {
     $imagePath = '../../assets/images/products/' . $product['image'];

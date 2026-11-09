@@ -93,13 +93,21 @@ $currentUrl = $_SERVER["REQUEST_URI"];
             <i class="bi bi-person-gear"></i>
             <span>Users</span>
         </a>
+
+        <a
+            href="/E-Commerce-Management-System/admin/pages/security/dashboard.php"
+            class="sidebar-link <?= strpos($currentUrl, '/security/dashboard') !== false ? 'active' : '' ?>"
+        >
+            <i class="bi bi-activity"></i>
+            <span>Security Monitor</span>
+        </a>
         <?php } else { ?>
         <div class="sidebar-section-title">System & Security</div>
         <?php } ?>
 
         <a
             href="/E-Commerce-Management-System/admin/pages/security/mfa.php"
-            class="sidebar-link <?= strpos($currentUrl, '/security/') !== false ? 'active' : '' ?>"
+            class="sidebar-link <?= strpos($currentUrl, '/security/mfa') !== false ? 'active' : '' ?>"
         >
             <i class="bi bi-shield-lock-fill"></i>
             <span>Two-Factor Auth</span>

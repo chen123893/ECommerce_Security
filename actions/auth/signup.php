@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include "../../config/database.php";
 include_once "../../includes/security.php";
+require_once "../../includes/security_audit.php";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
@@ -67,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_email'] = $email;
             $_SESSION['user_role'] = 'Client';
             $_SESSION['client_id'] = $client_id;
+            security_log_event('account_registered', 'success', ['identifier' => $email]);
             
             header("Location: ../../pages/home.php");
             exit;

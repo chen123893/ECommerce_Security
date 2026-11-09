@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include "../../config/database.php";
 include_once "../../includes/security.php";
+require_once "../../includes/security_audit.php";
 
 $error = '';
 
@@ -21,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 1. Check Rate Limiting before processing
     $rateCheck = check_login_rate_limit($conn, $email, $ip);
     if (!$rateCheck['allowed']) {
+        security_log_event('login_blocked', 'blocked', ['identifier' => $email, 'context' => ['portal' => 'customer']]);
         $_SESSION['auth_error'] = $rateCheck['message'];
         header("Location: ../../pages/auth/login.php");
         exit;
@@ -66,12 +68,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_close($client_stmt);
 
         if (isset($_SESSION['user_id'])) {
+            security_log_event('login_success', 'success', ['identifier' => $email, 'context' => ['portal' => 'customer']]);
             header("Location: ../../pages/home.php");
             exit;
         }
     } else {
         // Record failed attempt
         record_login_attempt($conn, $email, $ip, false);
+        security_log_event('login_failure', 'failure', ['identifier' => $email, 'context' => ['portal' => 'customer']]);
 
         // Check if now locked
         $postCheck = check_login_rate_limit($conn, $email, $ip);
