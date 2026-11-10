@@ -92,6 +92,19 @@ function is_admin_role(): bool
     return ($_SESSION['admin_role'] ?? '') === 'Admin';
 }
 
+/** True if this user is the only remaining Admin, so removing them would lock everyone out. */
+function is_last_admin(mysqli $conn, int $userId): bool
+{
+    $stmt = $conn->prepare("SELECT COUNT(*), COALESCE(SUM(id = ?), 0) FROM users WHERE role = 'Admin'");
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $stmt->bind_result($admins, $isTarget);
+    $stmt->fetch();
+    $stmt->close();
+
+    return (int) $admins === 1 && (int) $isTarget === 1;
+}
+
 function admin_can_access(string $page): bool
 {
     return is_admin_role() || in_array(strtolower($page), staff_allowed_pages(), true);

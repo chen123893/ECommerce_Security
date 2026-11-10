@@ -3,7 +3,18 @@ include '../../includes/auth.php';
 require_admin_role();
 include '../../../config/database.php';
 
-$id = $_GET['id'];
+$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+
+if (!$id) {
+    header("Location: index.php");
+    exit;
+}
+
+if (is_last_admin($conn, $id)) {
+    security_log_access_denied('last_admin_protected');
+    header("Location: index.php?error=last_admin");
+    exit;
+}
 
 try {
 

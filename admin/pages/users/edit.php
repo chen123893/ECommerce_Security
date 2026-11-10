@@ -32,7 +32,13 @@ if (isset($_POST['submit'])) {
         $canProceed = true;
         $hashedPassword = null;
 
-        if ($password !== "") {
+        if ($role !== 'Admin' && is_last_admin($conn, $id)) {
+            security_log_access_denied('last_admin_protected');
+            $error = "This is the last Admin account, so its role cannot be changed.";
+            $canProceed = false;
+        }
+
+        if ($canProceed && $password !== "") {
             $policy = validate_password_strength($password);
             if (!$policy['valid']) {
                 $error = implode(' ', $policy['errors']);
