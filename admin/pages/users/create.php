@@ -28,6 +28,7 @@ if (isset($_POST['submit'])) {
             mysqli_stmt_bind_param($stmt, "ssss", $name, $email, $hashedPassword, $role);
 
             if (mysqli_stmt_execute($stmt)) {
+                security_log_event('admin_user_created', 'success', ['target_type' => 'user', 'target_id' => mysqli_insert_id($conn), 'context' => ['assigned_role' => $role]]);
                 header("Location: index.php");
                 exit;
             } else {

@@ -4,14 +4,18 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+require_once __DIR__ . '/../../includes/security_audit.php';
+
 function require_admin(): void
 {
     if (!isset($_SESSION['admin_id'])) {
+        security_log_access_denied('admin_area_not_signed_in');
         header("Location: /E-Commerce-Management-System/admin/login.php");
         exit;
     }
 
     if (!in_array($_SESSION['admin_role'] ?? '', ['Admin', 'Staff'], true)) {
+        security_log_access_denied('admin_area_invalid_role');
         $_SESSION = [];
         session_destroy();
         header("Location: /E-Commerce-Management-System/admin/login.php");
@@ -24,6 +28,7 @@ function require_admin_role(): void
     require_admin();
 
     if (($_SESSION['admin_role'] ?? '') !== 'Admin') {
+        security_log_access_denied('administrator_role_required');
         http_response_code(403);
         ?>
         <!DOCTYPE html>

@@ -3,8 +3,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once "../../includes/csrf.php";
+require_once "../../includes/security_audit.php";
 
 if (!isset($_SESSION['client_id'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        security_log_access_denied('not_signed_in');
+    }
     header("Location: ../../pages/auth/login.php");
     exit;
 }
@@ -14,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit("Method not allowed.");
 }
 if (!csrf_token_is_valid('place_order', $_POST['csrf_token'] ?? null)) {
+    security_log_event('csrf_rejected', 'denied', ['context' => ['form' => 'place_order']]);
     http_response_code(403);
     exit("Invalid or missing CSRF token.");
 }

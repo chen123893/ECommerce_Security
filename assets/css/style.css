@@ -1962,3 +1962,41 @@ textarea {
     text-align: left !important;
   }
 }
+
+/* Privacy notice and account security pages */
+.info-page {
+  max-width: 760px;
+}
+
+.info-page h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.info-page h2 {
+  font-size: 1.25rem;
+  margin: 2rem 0 0.5rem;
+}
+
+.info-page p,
+.info-page li {
+  line-height: 1.6;
+}
+
+.info-page ul,
+.info-page ol {
+  margin: 0.5rem 0 0 1.25rem;
+}
+
+.info-page ul {
+  list-style: disc;
+}
+
+.info-page ol {
+  list-style: decimal;
+}
+
+.info-page a {
+  color: var(--primary);
+  text-decoration: underline;
+}

@@ -1,0 +1,58 @@
+PASS M5-01 customer login recorded | login_success	success	1	Client	a***@example.com	/E-Commerce-Management-System/actions/auth/login.php
+PASS M5-01b admin login recorded | login_success	success	6	Admin	a***@shopease.com
+PASS M5-02 failed login recorded | login_failure	failure	NULL	o***@example.com
+PASS M5-03 customer on admin page: redirected and recorded | 302 access_denied	denied	1	Client	/E-Commerce-Management-System/admin/pages/users/index.php	{"reason":"admin_area_not_signed_in"}
+PASS M5-03b Staff on Admin-only page: 403 and recorded | 403 access_denied	Staff	{"reason":"administrator_role_required"}
+PASS M5-03c guest on admin page: recorded | access_denied	NULL	{"reason":"admin_area_not_signed_in"}
+PASS LOG-RESET-1 reset request recorded | token captured
+PASS LOG-RESET-2 invalid reset token rejected and recorded | 
+PASS LOG-RESET-3 reset completed and recorded; flow still works | ../../pages/auth/login.php
+PASS LOG-CSRF bad CSRF token: 403 and recorded | 403
+PASS LOG-ADMIN product delete still works and is recorded | admin_product_deleted	6	product	44
+PASS LOG-XFF forged X-Forwarded-For is not stored | 172.21.0.1
+PASS M5-04 admin opens dashboard | 200
+PASS DASH-PRIV dashboard hides full emails and last IP octet | 
+PASS M5-05a Staff denied | 403
+PASS M5-05b customer denied | /E-Commerce-Management-System/admin/login.php
+PASS M5-05c guest denied | /E-Commerce-Management-System/admin/login.php
+PASS M5-08a event type filter | 2 rows {'Login failed'}
+PASS M5-08b outcome filter | {'Denied'}
+PASS M5-08c date filter | tomorrow empty, today 17 of 17
+PASS M5-08d invalid filter values ignored, no SQL error | 200
+bool(true)
+PASS DASH-XSS stored markup is escaped | 
+PASS RULE-1a below threshold: no alert after 4 | 
+PASS M5-06a alert raised on 5th failure | open	5	y***@example.com
+PASS M5-06b warning shown on dashboard | 
+PASS DEDUP-1 3 more attempts: still one alert, count rises | 1	8
+PASS DEDUP-1b attempts during lockout logged as blocked | 3
+PASS DEDUP-1c one detection event only | 
+PASS ACK-1 acknowledge clears alert from open list | 
+PASS ACK-2 acknowledge without CSRF token refused | 403
+PASS DEDUP-2 next failure after acknowledgement does not re-alert | 
+PASS DEDUP-3 5 new failures after acknowledgement raise a new alert | open	5
+PASS RULE-2 10 failures across 10 accounts from one address | repeated_failed_login_ip	10
+PASS RULE-3 5 denied requests by one user | before 0, 5	User #8
+PASS RULE-4 10 deletions by one administrator | before 0, 10	User #6
+bool(true)
+PASS M5-07 no passwords, tokens, secrets or cookies in stored audit data | searched 18 values in 1155 chars; leaks=[]
+  sample context: {"note":"value [redacted] and [redacted] and [redacted]"}
+PASS PRIV-COL no column for email, password or token | id,created_at,event_type,category,outcome,actor_user_id,actor_role,identifier_hash,identifier_masked,ip_address,http_method,request_path,target_type,target_id,context
+PASS PRIV-MASK non-email input stored as placeholder | 
+PASS RETAIN 91-day row deleted, 89-day row kept, purge recorded | Array ( [0] => 1 [1] => 0 )
+PASS PRIV-PAGE privacy page loads with retention and no compliance claim | 200
+PASS GUIDE guidance page covers the four topics | 200
+PASS FOOTER footer links both pages | 
+PASS REG pages/products/index.php | 200
+PASS REG pages/brands/index.php | 200
+PASS REG pages/categories/index.php | 200
+PASS REG admin/index.php | 200
+PASS REG admin/pages/products/index.php | 200
+PASS REG admin/pages/orders/index.php | 200
+PASS REG admin/pages/users/index.php | 200
+PASS REG admin/pages/security/mfa.php | 200
+PASS LOG-LOGOUT admin logout recorded | 302
+PASS FAIL-OPEN login still works when the audit table cannot be written | ../../pages/home.php
+apache php fatal count: 0
+
+TOTAL 52 checks, 52 passed, 0 failed: []

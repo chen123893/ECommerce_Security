@@ -3,8 +3,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 include "../../config/database.php";
+require_once "../../includes/security_audit.php";
 
 if (!isset($_SESSION['client_id'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        security_log_access_denied('not_signed_in');
+    }
     header("Location: ../../pages/auth/login.php");
     exit;
 }

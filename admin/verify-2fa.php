@@ -9,6 +9,7 @@ if (empty($_SESSION['2fa_pending']) || empty($_SESSION['2fa_pending_admin_id']))
 include '../config/database.php';
 include_once '../includes/security.php';
 include_once '../includes/totp.php';
+require_once '../includes/security_audit.php';
 
 $adminId = (int)$_SESSION['2fa_pending_admin_id'];
 $adminEmail = $_SESSION['2fa_pending_admin_email'] ?? '';
@@ -54,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Rate limiting for 2FA checks (protects 6-digit code against brute-force)
     $rateCheck = check_login_rate_limit($conn, "2fa_{$adminEmail}", $ip);
     if (!$rateCheck['allowed']) {
+        security_log_event('mfa_blocked', 'blocked', ['identifier' => $adminEmail, 'user_id' => $adminId]);
         $error = $rateCheck['message'];
     } elseif ($code === "") {
         $error = "Please enter your 6-digit authenticator code or emergency backup code.";
@@ -98,6 +100,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['2fa_pending_admin_role']
             );
 
+            security_log_event('mfa_success', 'success', ['identifier' => $adminEmail, 'context' => ['method' => $isBackupCode ? 'recovery' : 'authenticator']]);
+
             if ($isBackupCode) {
                 $_SESSION['admin_auth_warning'] = "You signed in using an emergency backup recovery code. That code is now consumed.";
             }
@@ -106,6 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } else {
             record_login_attempt($conn, "2fa_{$adminEmail}", $ip, false);
+            security_log_event('mfa_failure', 'failure', ['identifier' => $adminEmail, 'user_id' => $adminId]);
             $postCheck = check_login_rate_limit($conn, "2fa_{$adminEmail}", $ip);
             if (!$postCheck['allowed']) {
                 $error = $postCheck['message'];
