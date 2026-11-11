@@ -4,23 +4,13 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+require_once __DIR__ . '/../../includes/security_audit.php';
 
 /** Role currently stored for this user, or '' if the account no longer exists. */
 function fetch_current_role(int $userId): string
 {
-    // Read configuration without including database.php twice in one request.
-    $env = [];
-    $envPath = __DIR__ . '/../../.env';
-    if (is_readable($envPath)) {
-        foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-            $line = trim($line);
-            if ($line === '' || $line[0] === '#' || strpos($line, '=') === false) {
-                continue;
-            }
-            [$name, $value] = explode('=', $line, 2);
-            $env[trim($name)] = trim($value);
-        }
-    }
+    // Own connection, as in the audit logger: config/database.php cannot be loaded twice in one request.
+    $env = security_audit_env();
     $port = (int)($env['DB_PORT'] ?? 3306);
 
     foreach ([$port, $port === 3307 ? 3306 : 3307] as $candidate) {
@@ -49,6 +39,7 @@ function fetch_current_role(int $userId): string
 function require_admin(): void
 {
     if (!isset($_SESSION['admin_id'])) {
+        security_log_access_denied('admin_area_not_signed_in');
         header("Location: /E-Commerce-Management-System/admin/login.php");
         exit;
     }
@@ -57,6 +48,7 @@ function require_admin(): void
     $_SESSION['admin_role'] = fetch_current_role((int) $_SESSION['admin_id']);
 
     if (!in_array($_SESSION['admin_role'], ['Admin', 'Staff'], true)) {
+        security_log_access_denied('admin_area_invalid_role');
         $_SESSION = [];
         session_destroy();
         header("Location: /E-Commerce-Management-System/admin/login.php");
@@ -69,6 +61,7 @@ function require_admin_role(): void
     require_admin();
 
     if (($_SESSION['admin_role'] ?? '') !== 'Admin') {
+        security_log_access_denied('administrator_role_required');
         deny_admin_access();
     }
 }
@@ -99,6 +92,19 @@ function is_admin_role(): bool
     return ($_SESSION['admin_role'] ?? '') === 'Admin';
 }
 
+/** True if this user is the only remaining Admin, so removing them would lock everyone out. */
+function is_last_admin(mysqli $conn, int $userId): bool
+{
+    $stmt = $conn->prepare("SELECT COUNT(*), COALESCE(SUM(id = ?), 0) FROM users WHERE role = 'Admin'");
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $stmt->bind_result($admins, $isTarget);
+    $stmt->fetch();
+    $stmt->close();
+
+    return (int) $admins === 1 && (int) $isTarget === 1;
+}
+
 function admin_can_access(string $page): bool
 {
     return is_admin_role() || in_array(strtolower($page), staff_allowed_pages(), true);
@@ -120,6 +126,7 @@ function current_admin_page(): string
 function enforce_admin_page_access(): void
 {
     if (!admin_can_access(current_admin_page())) {
+        security_log_access_denied('administrator_role_required');
         deny_admin_access();
     }
 }

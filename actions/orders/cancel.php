@@ -3,13 +3,24 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 include "../../config/database.php";
+require_once "../../includes/security_audit.php";
+require_once "../../includes/csrf.php";
 
 if (!isset($_SESSION['client_id'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        security_log_access_denied('not_signed_in');
+    }
     header("Location: ../../pages/auth/login.php");
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrf_token_is_valid('cancel_order', $_POST['csrf_token'] ?? null)) {
+        security_log_event('csrf_rejected', 'denied', ['context' => ['form' => 'cancel_order']]);
+        http_response_code(403);
+        exit("Invalid or missing CSRF token.");
+    }
+
     $client_id = (int)$_SESSION['client_id'];
     $order_id = isset($_POST['order_id']) ? (int)$_POST['order_id'] : 0;
     
@@ -63,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else {
         // Same response whether the order is missing or belongs to someone else.
+        security_log_access_denied('order_not_owned');
         http_response_code(403);
         exit('Order not found or access denied.');
     }

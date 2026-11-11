@@ -2,6 +2,7 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+require_once "../../includes/csrf.php";
 include "../../config/database.php";
 
 if (!isset($_SESSION['client_id'])) {
@@ -12,6 +13,7 @@ if (empty($_SESSION['cart'])) {
     header("Location: ../cart/index.php");
     exit;
 }
+$checkoutToken = csrf_token('place_order');
 
 include "../../includes/header.php";
 include "../../includes/navbar.php";
@@ -115,7 +117,8 @@ $user = $user_result ? mysqli_fetch_assoc($user_result) : null;
                             <div class="checkout-item">
                                 <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
                                     <div class="checkout-item-image">
-                                        <img src="../../admin/assets/images/products/<?php echo htmlspecialchars($product['image'] ?? 'default.jpg'); ?>" onerror="this.src='../../admin/assets/images/products/<?php echo htmlspecialchars($product['image'] ?? 'iphone15.jpg'); ?>'" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                        <img src="../../admin/assets/images/products/<?php echo rawurlencode($product['image'] ?? 'default.jpg'); ?>"
+                                            onerror="this.onerror=null;this.src='../../admin/assets/images/products/iphone15.jpg'" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                                     </div>
                                     <div class="checkout-item-info">
                                         <div style="font-weight: 600; color: var(--dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;"><?php echo htmlspecialchars($product['name']); ?></div>
@@ -151,6 +154,7 @@ $user = $user_result ? mysqli_fetch_assoc($user_result) : null;
                     </div>
                     
                     <form action="../../actions/checkout/place-order.php" method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($checkoutToken); ?>">
                         <button type="submit" class="btn btn-primary checkout-submit"><i class="bi bi-lock-fill"></i> Place order securely</button>
                     </form>
                     

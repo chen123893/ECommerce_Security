@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include "../../config/database.php";
 include_once "../../includes/security.php";
+require_once "../../includes/security_audit.php";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
@@ -18,10 +19,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = request_password_reset($conn, $email, $ip);
 
     if ($result['status'] === 'rate_limited') {
+        security_log_event('password_reset_blocked', 'blocked', ['identifier' => $email]);
         $_SESSION['auth_error'] = $result['message'];
         header("Location: ../../pages/auth/forgot-password.php");
         exit;
     }
+
+    security_log_event('password_reset_requested', 'info', ['identifier' => $email, 'context' => ['account_found' => !empty($result['user'])]]);
 
     $_SESSION['auth_success'] = 'If an account exists with that email address, password reset instructions have been dispatched. The reset link is valid for 30 minutes.';
 

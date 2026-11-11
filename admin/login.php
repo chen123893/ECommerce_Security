@@ -8,6 +8,7 @@ if (isset($_SESSION['admin_id']) && in_array($_SESSION['admin_role'] ?? '', ['Ad
 
 include '../config/database.php';
 include_once '../includes/security.php';
+require_once '../includes/security_audit.php';
 
 $error = "";
 $success = isset($_SESSION['admin_auth_success']) ? $_SESSION['admin_auth_success'] : "";
@@ -27,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 2. Rate Limiting Check
         $rateCheck = check_login_rate_limit($conn, $email, $ip);
         if (!$rateCheck['allowed']) {
+            security_log_event('login_blocked', 'blocked', ['identifier' => $email, 'context' => ['portal' => 'admin']]);
             $error = $rateCheck['message'];
         } else {
             // 3. User lookup with prepared statement
@@ -40,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($user && in_array($user['role'], ['Admin', 'Staff'], true) && verify_and_rehash_password($conn, $password, $user['password'], (int)$user['id'])) {
                 // If 2FA is active, initiate second factor challenge
                 if (!empty($user['two_factor_enabled'])) {
+                    security_log_event('login_mfa_required', 'info', ['identifier' => $email, 'user_id' => (int)$user['id'], 'role' => $user['role'], 'context' => ['portal' => 'admin']]);
                     $_SESSION['2fa_pending'] = true;
                     $_SESSION['2fa_pending_admin_id'] = (int)$user['id'];
                     $_SESSION['2fa_pending_admin_name'] = $user['name'];
@@ -58,10 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['admin_name'] = $user['name'];
                 $_SESSION['admin_email'] = $user['email'];
                 $_SESSION['admin_role'] = $user['role'];
+                security_log_event('login_success', 'success', ['identifier' => $email, 'context' => ['portal' => 'admin']]);
                 header("Location: index.php");
                 exit;
             } else {
                 record_login_attempt($conn, $email, $ip, false);
+                security_log_event('login_failure', 'failure', ['identifier' => $email, 'context' => ['portal' => 'admin']]);
 
                 // Check if account is now locked
                 $postCheck = check_login_rate_limit($conn, $email, $ip);

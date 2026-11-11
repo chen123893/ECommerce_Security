@@ -27,6 +27,8 @@
                     <li><a href="/E-Commerce-Management-System/pages/auth/login.php">My Account</a></li>
                     <li><a href="/E-Commerce-Management-System/pages/orders/index.php">Order History</a></li>
                     <li><a href="/E-Commerce-Management-System/pages/cart/index.php">Shopping Cart</a></li>
+                    <li><a href="/E-Commerce-Management-System/pages/privacy/index.php">Privacy Notice</a></li>
+                    <li><a href="/E-Commerce-Management-System/pages/security/index.php">Account Security</a></li>
                 </ul>
             </div>
             

@@ -1,5 +1,6 @@
 <?php
 include '../../includes/auth.php';
+require_once '../../../includes/csrf.php';
 $pageTitle = "Edit Order | ShopEase Admin";
 $pageHeading = "Edit Order";
 
@@ -39,6 +40,16 @@ while ($item = mysqli_fetch_assoc($itemsResult)) {
 $error = "";
 
 if (isset($_POST['submit'])) {
+    if (!csrf_token_is_valid('edit_order', $_POST['csrf_token'] ?? null)) {
+        security_log_event('csrf_rejected', 'denied', ['context' => ['form' => 'edit_order']]);
+        http_response_code(403);
+        exit("Invalid or missing CSRF token.");
+    }
+
+    if (!is_admin_role() && (isset($_POST['client_id']) || isset($_POST['product_id']) || isset($_POST['quantity']))) {
+        security_log_access_denied('staff_field_tamper', ['field' => 'order_details']);
+    }
+
     $client_id = (int)($_POST['client_id'] ?? 0);
     $status = mysqli_real_escape_string($conn, is_string($_POST['status'] ?? null) ? $_POST['status'] : '');
     $product_ids = $_POST['product_id'] ?? [];
@@ -85,6 +96,10 @@ if (isset($_POST['submit'])) {
         $error = "Staff can only keep a shipped order as shipped or mark it delivered.";
     }
 
+    if (!empty($error) && !is_admin_role()) {
+        security_log_access_denied('staff_status_rejected');
+    }
+
     if (empty($error) && !is_admin_role()) {
         $sql = "UPDATE orders SET status = '$status' WHERE id = $id AND status = '$old_status'";
 
@@ -97,6 +112,7 @@ if (isset($_POST['submit'])) {
                 }
             }
 
+            security_log_event('admin_order_updated', 'success', ['target_type' => 'order', 'target_id' => $id, 'context' => ['status' => $status]]);
             header("Location: index.php");
             exit;
         }
@@ -139,6 +155,8 @@ if (isset($_POST['submit'])) {
                     }
                 }
             }
+
+            security_log_event('admin_order_updated', 'success', ['target_type' => 'order', 'target_id' => $id, 'context' => ['status' => $status]]);
             header("Location: index.php");
             exit;
         } else {
@@ -184,6 +202,7 @@ include '../../includes/header.php';
             </div>
 
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('edit_order')); ?>">
                 <div class="form-grid">
                     <div class="form-group">
                         <fieldset class="d-flex flex-column gap-2" <?= is_admin_role() ? '' : 'disabled'; ?>>

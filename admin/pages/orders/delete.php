@@ -3,11 +3,19 @@ include '../../includes/auth.php';
 require_admin_role();
 include '../../../config/database.php';
 
-$id = $_GET['id'];
+$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+if (!$id) {
+    header("Location: index.php");
+    exit;
+}
 
 $sql = "DELETE FROM orders WHERE id = $id";
 
 if (mysqli_query($conn, $sql)) {
+
+    if (mysqli_affected_rows($conn) > 0) {
+        security_log_event('admin_order_deleted', 'success', ['target_type' => 'order', 'target_id' => (int)$id]);
+    }
 
     header("Location: index.php");
     exit;

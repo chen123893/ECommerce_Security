@@ -1,7 +1,10 @@
 <?php
 include '../../includes/auth.php';
+require_once '../../../includes/csrf.php';
 $pageTitle = "Products | ShopEase Admin";
 $pageHeading = "Products";
+$canDelete = ($_SESSION['admin_role'] ?? '') === 'Admin';
+$deleteToken = $canDelete ? csrf_token('delete_product') : null;
 
 include '../../../config/database.php';
 
@@ -111,9 +114,15 @@ include '../../includes/header.php';
                                     <a href="edit.php?id=<?= $product['id']; ?>" class="icon-action action-edit" aria-label="Edit product" title="Edit Product">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a href="delete.php?id=<?= $product['id']; ?>" class="icon-action action-delete" aria-label="Delete product" title="Delete Product">
-                                        <i class="bi bi-trash3"></i>
-                                    </a>
+                                    <?php if ($canDelete) { ?>
+                                        <form method="POST" action="delete.php" data-confirm-delete>
+                                            <input type="hidden" name="id" value="<?= (int)$product['id']; ?>">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($deleteToken); ?>">
+                                            <button type="submit" class="icon-action action-delete" aria-label="Delete product" title="Delete Product">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </form>
+                                    <?php } ?>
                                 </div>
                             </div>
                         </div>

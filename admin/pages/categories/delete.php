@@ -2,7 +2,11 @@
 include '../../includes/auth.php';
 require_admin_role();
 include '../../../config/database.php';
-$id = $_GET['id'];
+$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+if (!$id) {
+    header("Location: index.php");
+    exit;
+}
 
 $sql = "DELETE FROM categories
         WHERE id = $id";

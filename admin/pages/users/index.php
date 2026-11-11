@@ -24,6 +24,9 @@ if ($result) {
 
     <main class="admin-content">
         <?php include '../../includes/navbar.php'; ?>
+        <?php if (($_GET['error'] ?? '') === 'last_admin') { ?>
+            <div class="alert alert-danger">The last Admin account cannot be deleted.</div>
+        <?php } ?>
 
         <div class="page-header">
             <div>

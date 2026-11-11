@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 include "../../config/database.php";
+require_once "../../includes/csrf.php";
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['client_id'])) {
     header("Location: ../auth/login.php");
@@ -99,7 +100,8 @@ unset($_SESSION['order_error'], $_SESSION['order_success']);
                         ?>
                             <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #F3F4F6;">
                                 <div style="width: 60px; height: 60px; background: var(--background); border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0.25rem;">
-                                    <img src="../../admin/assets/images/products/<?php echo htmlspecialchars($item['image'] ?? 'default.jpg'); ?>" onerror="this.src='../../admin/assets/images/products/<?php echo htmlspecialchars($item['image'] ?? 'iphone15.jpg'); ?>'" alt="<?php echo htmlspecialchars($item['name']); ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                    <img src="../../admin/assets/images/products/<?php echo rawurlencode($item['image'] ?? 'default.jpg'); ?>"
+                                        onerror="this.onerror=null;this.src='../../admin/assets/images/products/iphone15.jpg'" alt="<?php echo htmlspecialchars($item['name']); ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                                 </div>
                                 <div style="flex: 1;">
                                     <div style="font-weight: 600; color: var(--dark);"><?php echo htmlspecialchars($item['name']); ?></div>
@@ -198,6 +200,7 @@ unset($_SESSION['order_error'], $_SESSION['order_success']);
         <div class="modal-title">Cancel Order?</div>
         <div class="modal-text">Are you sure you want to cancel this order? This action cannot be undone and your items will be released back to stock.</div>
         <form action="../../actions/orders/cancel.php" method="POST" class="modal-actions">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('cancel_order')); ?>">
             <input type="hidden" name="order_id" id="modalOrderId" value="">
             <button type="button" class="btn btn-secondary" onclick="closeCancelModal()">Keep Order</button>
             <button type="submit" class="btn btn-primary" style="background: #DC2626; border-color: #DC2626; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);">Yes, Cancel It</button>
