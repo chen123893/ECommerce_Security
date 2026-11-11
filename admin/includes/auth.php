@@ -6,6 +6,36 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 require_once __DIR__ . '/../../includes/security_audit.php';
 
+/** Role currently stored for this user, or '' if the account no longer exists. */
+function fetch_current_role(int $userId): string
+{
+    // Own connection, as in the audit logger: config/database.php cannot be loaded twice in one request.
+    $env = security_audit_env();
+    $port = (int)($env['DB_PORT'] ?? 3306);
+
+    foreach ([$port, $port === 3307 ? 3306 : 3307] as $candidate) {
+        try {
+            $db = new mysqli($env['DB_HOST'] ?? '127.0.0.1', $env['DB_USER'] ?? 'root', $env['DB_PASS'] ?? '', $env['DB_NAME'] ?? 'ecommerce', $candidate);
+            if ($db->connect_errno) {
+                continue;
+            }
+            $stmt = $db->prepare('SELECT role FROM users WHERE id = ? LIMIT 1');
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            $stmt->bind_result($role);
+            $found = $stmt->fetch();
+            $stmt->close();
+            $db->close();
+
+            return $found ? (string) $role : '';
+        } catch (Throwable $exception) {
+            continue;
+        }
+    }
+
+    return '';
+}
+
 function require_admin(): void
 {
     if (!isset($_SESSION['admin_id'])) {
@@ -14,7 +44,10 @@ function require_admin(): void
         exit;
     }
 
-    if (!in_array($_SESSION['admin_role'] ?? '', ['Admin', 'Staff'], true)) {
+    // Use the role stored now, not the copy cached in the session at login.
+    $_SESSION['admin_role'] = fetch_current_role((int) $_SESSION['admin_id']);
+
+    if (!in_array($_SESSION['admin_role'], ['Admin', 'Staff'], true)) {
         security_log_access_denied('admin_area_invalid_role');
         $_SESSION = [];
         session_destroy();
@@ -29,7 +62,79 @@ function require_admin_role(): void
 
     if (($_SESSION['admin_role'] ?? '') !== 'Admin') {
         security_log_access_denied('administrator_role_required');
-        http_response_code(403);
+        deny_admin_access();
+    }
+}
+
+/**
+ * Pages Staff may open, relative to /admin and in lowercase. Admin has full access.
+ * Any page not listed is refused for non-Admin roles (deny by default).
+ */
+function staff_allowed_pages(): array
+{
+    return [
+        'index.php',
+        'pages/products/index.php',
+        'pages/products/show.php',
+        'pages/products/create.php',
+        'pages/products/edit.php',
+        'pages/orders/index.php',
+        'pages/orders/order_items.php',
+        'pages/orders/edit.php',
+        'pages/clients/index.php',
+        'pages/clients/show.php',
+        'pages/security/mfa.php',
+    ];
+}
+
+function is_admin_role(): bool
+{
+    return ($_SESSION['admin_role'] ?? '') === 'Admin';
+}
+
+/** True if this user is the only remaining Admin, so removing them would lock everyone out. */
+function is_last_admin(mysqli $conn, int $userId): bool
+{
+    $stmt = $conn->prepare("SELECT COUNT(*), COALESCE(SUM(id = ?), 0) FROM users WHERE role = 'Admin'");
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $stmt->bind_result($admins, $isTarget);
+    $stmt->fetch();
+    $stmt->close();
+
+    return (int) $admins === 1 && (int) $isTarget === 1;
+}
+
+function admin_can_access(string $page): bool
+{
+    return is_admin_role() || in_array(strtolower($page), staff_allowed_pages(), true);
+}
+
+/** Path of the running script relative to /admin, or '' if it cannot be resolved. */
+function current_admin_page(): string
+{
+    $script = str_replace('\\', '/', (string) realpath($_SERVER['SCRIPT_FILENAME'] ?? ''));
+    $base = str_replace('\\', '/', (string) realpath(dirname(__DIR__))) . '/';
+
+    if ($script === '' || stripos($script, $base) !== 0) {
+        return '';
+    }
+
+    return strtolower(substr($script, strlen($base)));
+}
+
+function enforce_admin_page_access(): void
+{
+    if (!admin_can_access(current_admin_page())) {
+        security_log_access_denied('administrator_role_required');
+        deny_admin_access();
+    }
+}
+
+/** Sends HTTP 403 with the access-restricted page and stops the request. */
+function deny_admin_access(): void
+{
+    http_response_code(403);
         ?>
         <!DOCTYPE html>
         <html lang="en">
@@ -204,9 +309,9 @@ function require_admin_role(): void
         </html>
         <?php
         exit;
-    }
 }
 
 require_admin();
+enforce_admin_page_access();
 
 ?>

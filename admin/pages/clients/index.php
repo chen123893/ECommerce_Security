@@ -42,10 +42,12 @@ if ($result) {
             </div>
 
             <div class="page-actions">
+                <?php if (admin_can_access('pages/clients/create.php')) { ?>
                 <a href="create.php" class="btn btn-primary">
                     <i class="bi bi-plus-lg"></i>
                     <span>Add Client</span>
                 </a>
+                <?php } ?>
             </div>
         </div>
 
@@ -85,9 +87,11 @@ if ($result) {
                                     <a href="show.php?id=<?= $client['id']; ?>" class="icon-action action-view" aria-label="View client" title="View Client Details">
                                         <i class="bi bi-eye"></i>
                                     </a>
+                                    <?php if (admin_can_access('pages/clients/edit.php')) { ?>
                                     <a href="edit.php?id=<?= $client['id']; ?>" class="icon-action action-edit" aria-label="Edit client" title="Edit Client">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    <?php } ?>
                                     <a href="delete.php?id=<?= $client['id']; ?>" class="icon-action action-delete" aria-label="Delete client" title="Delete Client">
                                         <i class="bi bi-trash3"></i>
                                     </a>
@@ -104,10 +108,12 @@ if ($result) {
                 </div>
                 <h3>No Clients Found</h3>
                 <p>There are currently no customer accounts registered in your store.</p>
+                <?php if (admin_can_access('pages/clients/create.php')) { ?>
                 <a href="create.php" class="btn btn-primary">
                     <i class="bi bi-plus-lg"></i>
                     <span>Add Client</span>
                 </a>
+                <?php } ?>
             </div>
         <?php } ?>
     </main>

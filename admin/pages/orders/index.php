@@ -41,10 +41,12 @@ if ($result) {
             </div>
 
             <div class="page-actions">
+                <?php if (admin_can_access('pages/orders/create.php')) { ?>
                 <a href="create.php" class="btn btn-primary">
                     <i class="bi bi-plus-lg"></i>
                     <span>Create Order</span>
                 </a>
+                <?php } ?>
             </div>
         </div>
 
@@ -101,10 +103,12 @@ if ($result) {
                 </div>
                 <h3>No Orders Found</h3>
                 <p>There are currently no customer orders in the system.</p>
+                <?php if (admin_can_access('pages/orders/create.php')) { ?>
                 <a href="create.php" class="btn btn-primary">
                     <i class="bi bi-plus-lg"></i>
                     <span>Create Order</span>
                 </a>
+                <?php } ?>
             </div>
         <?php } ?>
     </main>

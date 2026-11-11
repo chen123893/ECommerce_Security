@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 include "../../config/database.php";
+require_once "../../includes/csrf.php";
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['client_id'])) {
     header("Location: ../auth/login.php");
@@ -199,6 +200,7 @@ unset($_SESSION['order_error'], $_SESSION['order_success']);
         <div class="modal-title">Cancel Order?</div>
         <div class="modal-text">Are you sure you want to cancel this order? This action cannot be undone and your items will be released back to stock.</div>
         <form action="../../actions/orders/cancel.php" method="POST" class="modal-actions">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token('cancel_order')); ?>">
             <input type="hidden" name="order_id" id="modalOrderId" value="">
             <button type="button" class="btn btn-secondary" onclick="closeCancelModal()">Keep Order</button>
             <button type="submit" class="btn btn-primary" style="background: #DC2626; border-color: #DC2626; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);">Yes, Cancel It</button>
