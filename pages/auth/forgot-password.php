@@ -1,7 +1,6 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../../includes/session.php';
+start_shopease_session();
 if (isset($_SESSION['user_id'])) {
     header("Location: ../../pages/home.php");
     exit;

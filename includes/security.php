@@ -10,10 +10,6 @@
  * 5. Automatic database schema synchronization
  */
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 /**
  * Initializes security-related database tables and columns if they do not exist yet.
  * Safe to call multiple times (cached per request).
