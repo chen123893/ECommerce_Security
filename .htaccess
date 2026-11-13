@@ -1,0 +1,9 @@
+# Protect local configuration files independently of transport.
+<FilesMatch "(?i)^\.env(?:$|\.)">
+    Require all denied
+</FilesMatch>
+
+# ShopEase sessions and credentials must use HTTPS.
+<If "%{HTTPS} != 'on'">
+    Require all denied
+</If>

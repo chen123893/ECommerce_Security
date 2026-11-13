@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session.php';
+start_shopease_session(true);
 
 if (empty($_SESSION['2fa_pending']) || empty($_SESSION['2fa_pending_admin_id'])) {
     header("Location: login.php");

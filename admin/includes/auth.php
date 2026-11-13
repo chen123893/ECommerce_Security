@@ -1,8 +1,7 @@
 <?php
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+require_once __DIR__ . '/../../includes/session.php';
+start_shopease_session(true);
 
 require_once __DIR__ . '/../../includes/security_audit.php';
 
@@ -49,8 +48,7 @@ function require_admin(): void
 
     if (!in_array($_SESSION['admin_role'], ['Admin', 'Staff'], true)) {
         security_log_access_denied('admin_area_invalid_role');
-        $_SESSION = [];
-        session_destroy();
+        end_shopease_session();
         header("Location: /E-Commerce-Management-System/admin/login.php");
         exit;
     }

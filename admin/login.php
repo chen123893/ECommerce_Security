@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session.php';
+start_shopease_session(true);
 
 if (isset($_SESSION['admin_id']) && in_array($_SESSION['admin_role'] ?? '', ['Admin', 'Staff'], true)) {
     header("Location: index.php");
