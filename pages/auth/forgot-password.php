@@ -9,8 +9,8 @@ include "../../includes/header.php";
 
 $error = isset($_SESSION['auth_error']) ? $_SESSION['auth_error'] : '';
 $success = isset($_SESSION['auth_success']) ? $_SESSION['auth_success'] : '';
-$devLink = isset($_SESSION['auth_dev_reset_link']) ? $_SESSION['auth_dev_reset_link'] : '';
-unset($_SESSION['auth_error'], $_SESSION['auth_success'], $_SESSION['auth_dev_reset_link']);
+$devLink = $_SESSION['auth_local_reset_link'] ?? '';
+unset($_SESSION['auth_error'], $_SESSION['auth_success'], $_SESSION['auth_dev_reset_link'], $_SESSION['auth_local_reset_link']);
 ?>
 
 <main class="auth-page">

@@ -77,44 +77,19 @@ E-Commerce-Management-System/
 └── index.php         # Storefront entry point
 ```
 
-## ⚙️ Installation
+## Local setup (MAMP on macOS)
 
-1. 🚀 Install and start Apache and MySQL in XAMPP.
-2. 📁 Copy the project into the web root, for example:
+1. Create `/Applications/MAMP/shopease-local-htdocs` and put the project inside it as `E-Commerce-Management-System`. Use the project's [local Apache configuration](deploy/mamp-shopease-ssl.conf) for the HTTPS virtual host. Back up MAMP's Apache configuration before adding its Include; SSL and headers modules must be enabled.
+2. Put a locally trusted development certificate with a `localhost` Subject Alternative Name and its private key at the paths specified by the virtual host. Keep the key outside the web root. Verify Apache's configuration before restarting MAMP.
+3. Start MySQL and import `database/ecommerce.sql` into a **disposable local database**. It drops and recreates the `ecommerce` database and already includes the sample records and authentication tables. Apply `database/migration_security_audit.sql` for the audit tables. The older authentication migration is for upgrading an original schema, not for rerunning after importing the current dump.
+4. Create a local `.env` in the project root. Set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASS` to match your local MySQL setup (MAMP often uses port `8889`; confirm yours in MAMP). Keep the file out of Git.
+5. Open one of these HTTPS URLs:
 
-```text
-C:\xampp\htdocs\E-Commerce-Management-System
-```
+   - Storefront: [ShopEase](https://localhost:8443/E-Commerce-Management-System/)
+   - Customer login: [Customer sign-in](https://localhost:8443/E-Commerce-Management-System/pages/auth/login.php)
+   - Staff and administrator login: [Management sign-in](https://localhost:8443/E-Commerce-Management-System/admin/login.php)
 
-3. 🗃️ Open `http://localhost/phpmyadmin` and create a database named `ecommerce`.
-4. 📥 Import `database/ecommerce.sql`.
-5. 🌱 Optionally import `database/seed.sql` to add sample users, products, categories, brands, and other data.
-6. 🔧 Check `config/database.php` and update the host, database name, username, and password for your local MySQL installation.
-7. 🔗 Open the application:
-
-- 🛍️ Storefront: `http://localhost/E-Commerce-Management-System/`
-- 🛒 Client login: `http://localhost/E-Commerce-Management-System/pages/auth/login.php`
-- 🔐 Staff and admin login: `http://localhost/E-Commerce-Management-System/admin/login.php`
-
-## 🔑 Demo accounts
-
-The accounts in `database/seed.sql` use the development password `password`:
-
-| Role   | Email                  |
-|--------|------------------------|
-| Admin  | `admin@shopease.com`   |
-| Staff  | `staff@shopease.com`   |
-| Client | `ahmed@example.com`    |
-| Client | `mohamed@example.com`  |
-| Client | `omar@example.com`     |
-| Client | `youssef@example.com`  |
-| Client | `ali@example.com`      |
-
-**Password for all accounts:** `password`
-
-The seed file does not currently include a `Staff` account. To test the staff portal, create a user with `role = 'Staff'` through the administrator user page or directly in the database, using a securely generated password hash.
-
-Change all development passwords before using the application outside a local test environment.
+Use dedicated local demo accounts and set their passwords through a trusted setup process. Enable MFA on the administrator demo account if you plan to show the challenge. The older MAMP HTTP project path is denied by the supplied configuration.
 
 ## 🗄️ Database overview
 
@@ -149,12 +124,12 @@ Change all development passwords before using the application outside a local te
 - Rate-limiting protection is also applied to TOTP verification attempts on 2FA screens.
 
 ### 3. Secure Password Reset Flow
-- **Anti-Enumeration Design**: Submitting an email returns a uniform, timing-safe confirmation message regardless of whether the email exists.
+- **Anti-Enumeration Design**: Submitting an email returns a uniform confirmation message on ordinary submissions regardless of whether the email exists.
 - **Cryptographic High-Entropy Tokens**:
   - Generates 256-bit cryptographically secure random tokens (`random_bytes(32)`).
   - Only stores **SHA-256 hashes** of tokens in the database, preventing token leakage in case of database dumps.
 - **Single-Use & 30-Minute Expiry**: Tokens expire in 30 minutes and are immediately consumed upon reset.
-- **Local Dev Simulation Banner**: In local testing environments without an active SMTP service, a simulated reset link is made available for instant testing.
+- **Local Dev Simulation Banner**: The browser displays a reset link only for the loopback MAMP HTTPS demo when `SHOPEASE_DEV_RESET_LINK=1` is explicitly set. Leave it disabled otherwise. Non-local email delivery requires a configured `SHOPEASE_BASE_URL` and a working PHP mail setup.
 
 ### 4. Admin Multi-Factor Authentication (MFA / TOTP)
 - **RFC 6238 Compliant TOTP Engine**: Works with Google Authenticator, Microsoft Authenticator, 1Password, Authy, etc.
