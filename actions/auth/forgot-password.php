@@ -6,6 +6,7 @@ include_once "../../includes/security.php";
 require_once "../../includes/security_audit.php";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    unset($_SESSION['auth_dev_reset_link'], $_SESSION['auth_local_reset_link']);
     $email = trim($_POST['email'] ?? '');
     $ip = get_client_ip();
 
@@ -29,9 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['auth_success'] = 'If an account exists with that email address, password reset instructions have been dispatched. The reset link is valid for 30 minutes.';
 
     if (!empty($result['plain_token']) && !empty($result['user'])) {
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $resetUrl = "{$scheme}://{$host}/E-Commerce-Management-System/pages/auth/reset-password.php?token=" . urlencode($result['plain_token']);
+        $baseUrl = rtrim($_ENV['SHOPEASE_BASE_URL'] ?? 'https://localhost:8443/E-Commerce-Management-System', '/');
+        $resetUrl = $baseUrl . '/pages/auth/reset-password.php?token=' . urlencode($result['plain_token']);
 
         // Dispatch email notification via mail()
         $to = $email;
@@ -48,14 +48,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  . "Reply-To: support@shopease.com\r\n"
                  . "X-Mailer: PHP/" . phpversion();
 
-        // Only attempt mail() in production / non-local environments to avoid Windows localhost socket timeouts
-        $isLocal = in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true) || (strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false);
-        if (!$isLocal) {
+        $isLocal = in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true);
+        $localHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'
+            && strtolower($_SERVER['HTTP_HOST'] ?? '') === 'localhost:8443';
+
+        if (($_ENV['SHOPEASE_DEV_RESET_LINK'] ?? '') === '1' && $isLocal && $localHttps) {
+            $_SESSION['auth_local_reset_link'] = $resetUrl;
+        } elseif (!$isLocal && !empty($_ENV['SHOPEASE_BASE_URL'])) {
             @mail($to, $subject, $body, $headers);
         }
-
-        // Store dev reset link in session for instant local testing
-        $_SESSION['auth_dev_reset_link'] = $resetUrl;
     }
 
     header("Location: ../../pages/auth/forgot-password.php");
