@@ -36,7 +36,7 @@ The paths below use `C:\xampp`. If you installed XAMPP elsewhere, update the pat
 3. **Enable HTTPS in Apache.** Copy [`xampp-shopease-ssl.conf`](xampp-shopease-ssl.conf) from the project’s `docs\user-manual` folder to `C:\xampp\apache\conf\extra`. Back up `C:\xampp\apache\conf\httpd.conf`. Open it and uncomment the existing `LoadModule ssl_module` and `LoadModule headers_module` lines if needed. Add this line once at the end:
 
    ```apache
-   Include conf/extra/httpd-shopease-ssl.conf
+   Include conf/extra/xampp-shopease-ssl.conf
    ```
 
 4. **Check the configuration and start XAMPP.** In PowerShell, run:
@@ -47,4 +47,4 @@ The paths below use `C:\xampp`. If you installed XAMPP elsewhere, update the pat
 
    If it reports `Syntax OK`, start or restart **Apache** and **MySQL** in the XAMPP Control Panel. Open [phpMyAdmin](http://127.0.0.1/phpmyadmin/) and [continue to the database setup](README.md#2-set-up-the-database).
 
-If Apache does not start, check its error log and make sure port `8443` is free. If the browser still warns about the certificate, confirm that you trust the generated certificate, restart the browser, and open the site using `localhost`.
+If setup fails, see [Troubleshooting](README.md#troubleshooting).
