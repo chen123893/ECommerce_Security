@@ -79,7 +79,7 @@ E-Commerce-Management-System/
 
 ## Local setup
 
-Follow the [ShopEase user manual](docs/user-manual/README.md) for Windows (XAMPP) or macOS (MAMP), including HTTPS, database setup and the assessment demo.
+Follow the [ShopEase user manual](docs/user-manual/README.md) for Windows (XAMPP), including HTTPS, database setup and the assessment demo.
 
 ## 🗄️ Database overview
 

@@ -1,21 +1,16 @@
 # ShopEase user manual
 
-Use this guide to install ShopEase locally and try the customer and management portals.
+Use this guide to install ShopEase on Windows and try the customer and management portals.
 
 ## 1. Set up the web server
 
-Follow the guide for your computer. Both setups use HTTPS on port `8443`.
-
-| Computer | Setup guide |
-| --- | --- |
-| **Windows** | [XAMPP setup](windows.md) |
-| macOS | [MAMP setup](macos.md) |
+Follow the [Windows setup guide for XAMPP](windows.md) to enable HTTPS on port `8443`.
 
 ## 2. Set up the database
 
-1. Open **phpMyAdmin** from XAMPP or MAMP. Use a database you can replace: the first import deletes and recreates the local `ecommerce` database.
+1. Open **phpMyAdmin** from XAMPP. Use a database you can replace: the first import deletes and recreates the local `ecommerce` database.
 2. On the server’s **Import** tab, import [`database/ecommerce.sql`](../../database/ecommerce.sql). Select `ecommerce` in the sidebar, then import [`database/migration_security_audit.sql`](../../database/migration_security_audit.sql).
-3. In the ShopEase folder beside `index.php`, create a plain text file named `.env` (without `.txt`). Enter your local database settings. Use the MySQL port shown in XAMPP or MAMP.
+3. In the ShopEase folder beside `index.php`, create a plain text file named `.env` (without `.txt`). Enter your local database settings. Use the MySQL port shown in the XAMPP Control Panel.
 
    ```dotenv
    DB_HOST=127.0.0.1
@@ -25,7 +20,7 @@ Follow the guide for your computer. Both setups use HTTPS on port `8443`.
    DB_PASS=your_local_database_password
    ```
 
-   XAMPP usually uses `3306`; MAMP often uses `8889`. Leave the value after `DB_PASS=` empty only if your local database user has no password. Keep `.env` out of Git.
+   XAMPP usually uses port `3306`. Leave the value after `DB_PASS=` empty only if your local database user has no password. Keep `.env` out of Git.
 
 ## 3. Open ShopEase
 
