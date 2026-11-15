@@ -77,19 +77,9 @@ E-Commerce-Management-System/
 └── index.php         # Storefront entry point
 ```
 
-## Local setup (MAMP on macOS)
+## Local setup
 
-1. Create `/Applications/MAMP/shopease-local-htdocs` and put the project inside it as `E-Commerce-Management-System`. Use the project's [local Apache configuration](deploy/mamp-shopease-ssl.conf) for the HTTPS virtual host. Back up MAMP's Apache configuration before adding its Include; SSL and headers modules must be enabled.
-2. Put a locally trusted development certificate with a `localhost` Subject Alternative Name and its private key at the paths specified by the virtual host. Keep the key outside the web root. Verify Apache's configuration before restarting MAMP.
-3. Start MySQL and import `database/ecommerce.sql` into a **disposable local database**. It drops and recreates the `ecommerce` database and already includes the sample records and authentication tables. Apply `database/migration_security_audit.sql` for the audit tables. The older authentication migration is for upgrading an original schema, not for rerunning after importing the current dump.
-4. Create a local `.env` in the project root. Set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASS` to match your local MySQL setup (MAMP often uses port `8889`; confirm yours in MAMP). Keep the file out of Git.
-5. Open one of these HTTPS URLs:
-
-   - Storefront: [ShopEase](https://localhost:8443/E-Commerce-Management-System/)
-   - Customer login: [Customer sign-in](https://localhost:8443/E-Commerce-Management-System/pages/auth/login.php)
-   - Staff and administrator login: [Management sign-in](https://localhost:8443/E-Commerce-Management-System/admin/login.php)
-
-Use dedicated local demo accounts and set their passwords through a trusted setup process. Enable MFA on the administrator demo account if you plan to show the challenge. The older MAMP HTTP project path is denied by the supplied configuration.
+Follow the [ShopEase user manual](docs/USER_MANUAL.md) for Windows (XAMPP) or macOS (MAMP), including HTTPS, database setup and the assessment demo.
 
 ## 🗄️ Database overview
 
