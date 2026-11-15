@@ -51,6 +51,7 @@ Use separate demo accounts for the three roles. If there is no administrator acc
 - **Sign in.** Open the management sign-in page and use your Staff account. Enter your authenticator code if you have enabled two-factor authentication.
 - **Products and stock.** Go to **Products → Add Product** or click the pencil icon on an existing product. Enter a whole stock quantity of zero or more. For a new product, enter a non-negative price with up to two decimal places, and upload a JPG, PNG, GIF or WebP image of 5 MB or less.
 - **Orders.** Go to **Orders** and open **View order items** to check the order. Use **Edit order status** and **Save Changes** to update the status. Staff can only keep a shipped order as **Shipped** or move it to **Delivered**.
+- **Clients.** Open **Clients** and select **View Client Details**. Staff cannot create, edit or delete customer records.
 - **Restrictions.** Staff cannot change the price of an existing product or edit an order’s customer, items, quantities or total. Staff cannot create or delete orders, delete products, manage users or open **Security Monitor**.
 
 ![Staff order form with only the order status editable](images/staff-edit-order.png)
@@ -71,6 +72,7 @@ Use separate demo accounts for the three roles. If there is no administrator acc
 - **Passwords.** Use at least eight characters, including an uppercase letter, a lowercase letter, a number and a symbol.
 - **Temporary lockout.** ShopEase blocks sign-in after five failed attempts for one email or ten from one IP address within 15 minutes. If you are locked out, wait for the time shown before trying again.
 - **Password reset.** Choose **Forgot password?** on the sign-in page and enter your registered email. Where email is configured, use the link to set a new password. The link expires after 30 minutes and works once. The default local setup does not send reset emails.
+  For the local demo only, add `SHOPEASE_DEV_RESET_LINK=1` to `.env`. Request a reset for a registered email over `https://localhost:8443` to see the reset link on the **Forgot password?** page.
 - **Two-factor authentication (MFA).** Staff and administrators can open **Two-Factor Auth** in the management portal. Scan the QR code with an authenticator app, enter the six-digit code and click **Verify Code & Enable MFA**. On your next sign-in, enter the current code after your password.
 - **Recovery codes.** Save the eight backup codes somewhere private. If you cannot open your authenticator app, use one of these codes at the sign-in challenge. Each works once. Generating new codes invalidates the old ones.
 - **Session timeout.** The customer and management portals require you to sign in again after 15 minutes of inactivity. Keep using the HTTPS address and log out when you finish on a shared computer.
